@@ -38,10 +38,10 @@ export default class ShapeManager extends Component {
 
     shapesNode:Node = null;
     currentShapeNode: Node = null;
-    shapeNodeStarPos: Vec3 = new Vec3(0,300,0);
-    shapeNodeTargetY: number = -300;
-    shapeMoveX: number = 30;
+    shapeHintNode: Node = null;
+
     currentIndexShape: number = 0;
+    numberMatchedShape:number = -1;
 
     textResult: string = 'FAILED';
 
@@ -69,6 +69,7 @@ export default class ShapeManager extends Component {
             this.shapesNode = new Node('shapes');
             GameManager.instance.GetAPNode().addChild(this.shapesNode);
         }
+        ResourcesManager.instance.LoadPrefabsFolder("Prefabs/ShapeTheCurves/Effects",false);
         this.LoadLevel(this.currentLevelindex);
     }
 
@@ -89,10 +90,13 @@ export default class ShapeManager extends Component {
                             let bgsprite = this.backgroudNode.getComponentInChildren("cc.Sprite");
                             if(bgsprite)
                             {
-                                bgsprite._spriteFrame = ResourcesManager.instance.GetSprites()["bg"];
+                                bgsprite._spriteFrame = ResourcesManager.instance.GetSprites("bg");
                             }
                         }
                         GameManager.instance.SwitchState(GAME_STATE.STATE_ACTION_PHASE);
+                        this.shapeHintNode = cc.instantiate(ResourcesManager.instance.GetPrefabs("shape-hint"));
+                        this.shapesNode.addChild(this.shapeHintNode);
+                        this.shapeHintNode.setPosition(-9999,-9999,0);
                     }
                 }
                 break;
@@ -130,14 +134,25 @@ export default class ShapeManager extends Component {
 
      LoadLevel(level:number)
      {
+        GameManager.instance.SwitchState(GAME_STATE.STATE_LOADING);
         this.shapesNode.removeAllChildren();
         this.isLevelLoading = true;
         this.currentShapeNode = null;
         this.currentIndexShape = 0;
+        this.textResult = 'FAILED';
+
         this.currentLevelInfo = ShapeLevel.instance.LEVELDATA[this.currentLevelindex];
-        ResourcesManager.instance.LoadSpritFolder("Textures/ShapeTheCurves/levels/"+this.currentLevelInfo.levelName);
+        ResourcesManager.instance.LoadSpritFolder("Textures/ShapeTheCurves/levels/"+this.currentLevelInfo.levelName,true);
         this.timeLevelRemaining = this.currentLevelInfo.timeFinish;
+        this.numberMatchedShape = 0;
+        this.currentLevelInfo.shapeInfo.forEach(element => {
+            if(element.targetPoint.r >=0)
+            {
+                this.numberMatchedShape++;
+            }
+        });
      }
+
      UpdateTouch()
      {
         let deltamove = this.inputController.GetMoveVector();
@@ -176,41 +191,51 @@ export default class ShapeManager extends Component {
         if(this.currentShapeNode)
         {
             let shapets = this.currentShapeNode.getComponent("Shape");
-            shapets.MoveShape(mtype,this.shapeMoveX);
+            shapets.MoveShape(mtype);
         }
     }
     
     UpdateGenerateShap()
     {
-        if(this.currentIndexShape >= this.currentLevelInfo.shapeInfo.length || GameManager.instance.GetTimeInAP() > this.currentLevelInfo.timeFinish)
+        if(this.currentIndexShape > this.currentLevelInfo.shapeInfo.length || GameManager.instance.GetTimeInAP() > this.currentLevelInfo.timeFinish)
         {
             GameManager.instance.SwitchState(GAME_STATE.STATE_GAME_RESULT);
             let bg = GameManager.instance.GetResultNode();
             let bgsprite = bg.getChildByName('background')?.getComponentInChildren('cc.Sprite');
-            bgsprite._spriteFrame = ResourcesManager.instance.GetSprites()['bg'];
+            bgsprite._spriteFrame = ResourcesManager.instance.GetSprites('bg');
+            if(this.numberMatchedShape<=0)
+            {
+                this.textResult = 'Congratulation!';
+            }
         }
         else
         {
-            let shapeinfo:ShapeInfo = this.currentLevelInfo.shapeInfo[this.currentIndexShape];
             if(this.currentShapeNode == null)
             {
+                if(this.currentIndexShape>=this.currentLevelInfo.shapeInfo.length)
+                {
+                    this.currentIndexShape++;
+                    return;
+                }
+                let shapeinfo:ShapeInfo = this.currentLevelInfo.shapeInfo[this.currentIndexShape];
                 //let node = new Node();
                 let node = cc.instantiate(this.prefabShape);
                 let shapets:Shape = node.getComponent('Shape');//node.addComponent('Shape') as Shape;
                 let rotatecontroller:RotateController = node.getComponent('RotateController');//node.addComponent('RotateController') as RotateController;
                 let sprite:Sprite = node.getComponentInChildren('cc.Sprite');//node.addComponent('cc.Sprite') as Sprite;
-                sprite._spriteFrame = ResourcesManager.instance.GetSprites()[shapeinfo.spriteName];
+                sprite._spriteFrame = ResourcesManager.instance.GetSprites(shapeinfo.spriteName);
                 this.shapesNode.addChild(node);
-                node.setPosition(this.shapeNodeStarPos);
+                node.setPosition(shapeinfo.startPoint.x,shapeinfo.startPoint.y,0);
                 node.setScale(new Vec3(shapeinfo.scale,shapeinfo.scale,shapeinfo.scale));
                 rotatecontroller.SetTimeRotate(0.2);
-                let rotate = shapeinfo.rotate>=0?shapeinfo.rotate:((Math.random()*10)%4);
+                let rotate = shapeinfo.startPoint.r>=0?shapeinfo.startPoint.r:(Math.round((Math.random()*10))%4);
                 rotatecontroller.RotateToAngle(rotate*90,new Vec3(0,0,-1));
                 shapets.SetRotateStatus(rotate);
-                shapets.InitShape(this.shapeNodeTargetY,this.currentLevelInfo.normalSpeed,this.currentLevelInfo.moveSpeed);
+                shapets.InitShape(shapeinfo,this.currentLevelInfo.minMoveX,this.currentLevelInfo.maxMoveX);
                 this.currentIndexShape++;
                 this.currentShapeNode = node;
-                console.log("add shape " + this.currentIndexShape);
+                this.shapeHintNode.setPosition(shapeinfo.hintPoint.x,shapeinfo.hintPoint.y,0);
+                console.log("add shape " + this.currentIndexShape + " rotate: " + rotate);
             }
             else
             {
@@ -231,6 +256,7 @@ export default class ShapeManager extends Component {
             {
                 //rotatecontroller.SetTimeRotate(0.2);
                 rotatecontroller.DoRotate(ROTATE_TYPE.F);
+                this.currentShapeNode.getComponent("Shape").UpdateRotateStatus();
             }
         }
     }
@@ -238,6 +264,13 @@ export default class ShapeManager extends Component {
     {
         if(this.currentShapeNode)
         {
+            let prefabexplosion = ResourcesManager.instance.GetPrefabs("shape-explosion");
+            if(prefabexplosion)
+            {
+                let nodeexplosion = cc.instantiate(prefabexplosion);
+                this.shapesNode.addChild(nodeexplosion);
+                nodeexplosion.setPosition(this.currentShapeNode.position);
+            }
             this.currentShapeNode.removeFromParent();
             this.currentShapeNode.getComponent("Shape").DeleteShape();
             this.currentShapeNode = null;
@@ -249,8 +282,35 @@ export default class ShapeManager extends Component {
         this.shapesNode.removeAllChildren();
         this.currentShapeNode = null;
         this.currentIndexShape = 0;
+        this.textResult = 'FAILED';
         GameManager.instance.ResetTimeInGame();
         GameManager.instance.SwitchState(GAME_STATE.STATE_ACTION_PHASE);
+        this.numberMatchedShape = 0;
+        this.currentLevelInfo.shapeInfo.forEach(element => {
+            if(element.targetPoint.r >=0)
+            {
+                this.numberMatchedShape++;
+            }
+        });
+        this.shapeHintNode = cc.instantiate(ResourcesManager.instance.GetPrefabs("shape-hint"));
+        this.shapesNode.addChild(this.shapeHintNode);
+        this.shapeHintNode.setPosition(-9999,-9999,0);
+    }
+
+    MatchedShape()
+    {
+        console.log('this shape is matched');
+        this.numberMatchedShape--;
+    }
+
+    PauseGame()
+    {
+        GameManager.instance.PauseGame();
+    }
+
+    ResumeGame()
+    {
+        GameManager.instance.ResumeGame();
     }
 }
 

@@ -101,6 +101,13 @@ export default class GameManager extends Component{
     {
         this.timeInGame = 0;
     }
+
+    PauseGame(){
+        this.SwitchState(GAME_STATE.STATE_IGM);
+    }
+    ResumeGame(){
+        this.SwitchState(GAME_STATE.STATE_ACTION_PHASE);
+    }
 }
 
 /**
