@@ -2,30 +2,38 @@
 import { _decorator, Component, Node, Vec3 } from 'cc';
 const { ccclass, property } = _decorator;
 
-export class ShapePoint
+export class PartPoint
+{
+    x:number = 0;
+    y:number = 0;
+};
+
+export class PartJoint
 {
     x:number =0;
     y:number = 0;
-    r:number = 0;//0  normal, -1 : random rotate (0->270), 1: rotate 90, 2: rotate 180, 3: rotate 270
+    id:string = "";
 };
 
-export class ShapeInfo
+export class PartInfo
 {
     spriteName:string ='';
     scale:number=0;
     fallSpeed:number = 0;
     moveSpeed:number = 0;
-    startPoint:ShapePoint;
-    targetPoint:ShapePoint;
-    hintPoint:ShapePoint;
+    startPoint:PartPoint;
+    partJoints: PartJoint[] = [];
 };
 
 export class ShapeLevelInfo{
     levelName: string = '';
-    timeFinish: number = 0;
+    timeLimited: number = 0;
+    targetMacthedParticle: number = 0;
     minMoveX:number = 0;
     maxMoveX:number = 0;
-    shapeInfo:ShapeInfo[] =[];
+    limitedLinePosY: number = 0;
+    firstPartPoint:PartPoint;
+    partInfo:PartInfo[] =[];
 };
 
 export default class ShapeLevel {
@@ -38,19 +46,44 @@ export default class ShapeLevel {
         return ShapeLevel._instance;
     }
     
-    LEVEL1:ShapeLevelInfo = {"levelName":"bambi","timeFinish": 50,"minMoveX":40,"maxMoveX":50,
-                        "shapeInfo": [
-                            {"spriteName":"1","scale":2,"fallSpeed":2,"moveSpeed":10,"startPoint":{"x":0,"y":300,"r":0},"targetPoint":{"x":-80,"y":-300,"r":0},"hintPoint":{"x":-80,"y":-300,"r":0}},
-                            {"spriteName":"2","scale":2,"fallSpeed":2,"moveSpeed":10,"startPoint":{"x":0,"y":300,"r":0},"targetPoint":{"x":-37,"y":-300,"r":-1},"hintPoint":{"x":-9999,"y":-9999,"r":0}},
-                            {"spriteName":"3","scale":2,"fallSpeed":2,"moveSpeed":10,"startPoint":{"x":0,"y":300,"r":1},"targetPoint":{"x":0,"y":-300,"r":0},"hintPoint":{"x":0,"y":-300,"r":0}},
-                            {"spriteName":"4","scale":2,"fallSpeed":2,"moveSpeed":10,"startPoint":{"x":0,"y":300,"r":-1},"targetPoint":{"x":87,"y":-300,"r":0},"hintPoint":{"x":87,"y":-300,"r":0}},
-                            {"spriteName":"5","scale":2,"fallSpeed":2,"moveSpeed":10,"startPoint":{"x":0,"y":300,"r":2},"targetPoint":{"x":127,"y":-300,"r":0},"hintPoint":{"x":127,"y":-300,"r":0}},
-                            //{"spriteName":"6","scale":2,"fallSpeed":2,"moveSpeed":10,"startPoint":{"x":0,"y":300,"r":-1},"targetPoint":{"x":-80,"y":-300,"r":-1},"hintPoint":{"x":-80,"y":-9999,"r":0}},
-                            //{"spriteName":"7","scale":2,"fallSpeed":2,"moveSpeed":10,"startPoint":{"x":0,"y":300,"r":3},"targetPoint":{"x":-105,"y":-300,"r":0},"hintPoint":{"x":-105,"y":-300,"r":0}},
-                            //{"spriteName":"8","scale":2,"fallSpeed":2,"moveSpeed":10,"startPoint":{"x":0,"y":300,"r":1},"targetPoint":{"x":0,"y":-300,"r":0},"hintPoint":{"x":0,"y":-300,"r":0}},
-                            //{"spriteName":"9","scale":2,"fallSpeed":2,"moveSpeed":10,"startPoint":{"x":0,"y":300,"r":-1},"targetPoint":{"x":-35,"y":-300,"r":0},"hintPoint":{"x":-35,"y":-300,"r":0}},
-                            //{"spriteName":"10","scale":2,"fallSpeed":2,"moveSpeed":10,"startPoint":{"x":0,"y":300,"r":-1},"targetPoint":{"x":-121,"y":-300,"r":0},"hintPoint":{"x":-121,"y":-300,"r":0}}
-                        ]
+    LEVEL1:ShapeLevelInfo = {"levelName":"bambi","timeLimited": 50,"targetMacthedParticle":3,"minMoveX":40,"maxMoveX":50,"limitedLinePosY":-300,"firstPartPoint":{"x":-100,"y":-300},
+                        "partInfo": [
+                            {
+                                "spriteName":"1","scale":1.5,"fallSpeed":2,"moveSpeed":10,"startPoint":{"x":0,"y":300},
+                                "partJoints": [
+                                    {"x":-20,"y":-250,"id":"2"},
+                                    {"x":-20,"y":-250,"id":"5"}
+                                ]
+                            },
+                            {
+                                "spriteName":"2","scale":1.5,"fallSpeed":2,"moveSpeed":10,"startPoint":{"x":0,"y":300},
+                                "partJoints": [
+                                    {"x":-20,"y":-250,"id":"2"},
+                                    {"x":-20,"y":-250,"id":"3"}
+                                ]
+                            },
+                            {
+                                "spriteName":"3","scale":1.5,"fallSpeed":2,"moveSpeed":10,"startPoint":{"x":0,"y":300},
+                                "partJoints": [
+                                    {"x":-20,"y":-250,"id":"4"},
+                                    {"x":-20,"y":-250,"id":"5"}
+                                ]
+                            },
+                            {
+                                "spriteName":"4","scale":1.5,"fallSpeed":2,"moveSpeed":10,"startPoint":{"x":0,"y":300},
+                                "partJoints": [
+                                    {"x":-20,"y":-250,"id":"1"},
+                                    {"x":-20,"y":-250,"id":"2"}
+                                ]
+                            },
+                            {
+                                "spriteName":"5","scale":1.5,"fallSpeed":2,"moveSpeed":10,"startPoint":{"x":0,"y":300},
+                                "partJoints": [
+                                    {"x":-20,"y":-250,"id":"1"},
+                                    {"x":-20,"y":-250,"id":"2"}
+                                ]
+                            },
+                        ],
                     };
     LEVELDATA:ShapeLevelInfo[] = [this.LEVEL1];
    

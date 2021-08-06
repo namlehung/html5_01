@@ -344,7 +344,7 @@
     },
     "_contentSize": {
       "__type__": "cc.Size",
-      "width": 197.95,
+      "width": 175.7,
       "height": 50.4
     },
     "_anchorPoint": {
@@ -380,7 +380,7 @@
       "b": 255,
       "a": 255
     },
-    "_string": "Loanding...",
+    "_string": "Loading...",
     "_horizontalAlign": 1,
     "_verticalAlign": 1,
     "_actualFontSize": 40,
@@ -1205,7 +1205,7 @@
   },
   {
     "__type__": "cc.Node",
-    "_name": "background_level",
+    "_name": "background-level",
     "_objFlags": 0,
     "_parent": {
       "__id__": 43
@@ -1732,11 +1732,11 @@
   {
     "__type__": "cc.ClickEvent",
     "target": {
-      "__id__": 2
+      "__id__": 5
     },
     "component": "",
-    "_componentId": "ea30fU/pw9HKL/8gK8/n95m",
-    "handler": "OnButtonRefresh",
+    "_componentId": "5fb2b0YCupP/ZaU/LPOf1MN",
+    "handler": "SwapShapeHint",
     "customEventData": ""
   },
   {
@@ -2880,26 +2880,6 @@
     "_id": "16uagNX8NLH5sLM793552v"
   },
   {
-    "__type__": "5fb2b0YCupP/ZaU/LPOf1MN",
-    "_name": "",
-    "_objFlags": 0,
-    "node": {
-      "__id__": 5
-    },
-    "_enabled": true,
-    "timePlayNode": {
-      "__id__": 83
-    },
-    "backgroudNode": {
-      "__id__": 44
-    },
-    "prefabShape": {
-      "__uuid__": "94c9312f-b7a0-4157-b40d-cf4abfc13cba",
-      "__expectedType__": "cc.Prefab"
-    },
-    "_id": "faaMIq+uZENJ2SwdgTiD0u"
-  },
-  {
     "__type__": "52d6f49x69OqYb0hHaqk4Om",
     "_name": "",
     "_objFlags": 0,
@@ -2909,6 +2889,24 @@
     "_enabled": true,
     "__prefab": null,
     "_id": "78r9cVHP9EZYwLuoUMXiuZ"
+  },
+  {
+    "__type__": "5fb2b0YCupP/ZaU/LPOf1MN",
+    "_name": "",
+    "_objFlags": 0,
+    "node": {
+      "__id__": 5
+    },
+    "_enabled": true,
+    "__prefab": null,
+    "timePlayNode": {
+      "__id__": 83
+    },
+    "prefabParticle": {
+      "__uuid__": "94c9312f-b7a0-4157-b40d-cf4abfc13cba",
+      "__expectedType__": "cc.Prefab"
+    },
+    "_id": "0dPB9ZH8xCibbVHR6ESN+j"
   },
   {
     "__type__": "cc.UITransform",
@@ -3001,6 +2999,7 @@
       "__id__": 2
     },
     "_enabled": true,
+    "__prefab": null,
     "_id": "08abWwpEBCYLuUVoC16Ffl"
   },
   {

@@ -3,10 +3,51 @@ import { _decorator, Component, Node,Vec2, CCLoader, Label, Vec3, Sprite, Prefab
 import GameManager, { GAME_STATE } from '../Manager/game-manager';
 import { InputController } from '../Controller/input-controller';
 import ResourcesManager from '../Manager/resource-manager';
-import ShapeLevel, { ShapeInfo, ShapeLevelInfo } from './shape-level';
-import Shape, {SHAPE_MOVE_TYPE} from './shape';
-import RotateController, { ROTATE_TYPE } from '../Controller/rotate-controller';
+import ShapeLevel, {  PartInfo, PartJoint, ShapeLevelInfo } from './shape-level';
+import Particle, {PARTICLE_MOVE_TYPE} from './particle';
+
 const { ccclass, property } = _decorator;
+
+export class ShapeJointInfo
+{
+    arrayJoint:PartJoint[] = [];
+    arrayStatus: boolean[] = [];//true: is jointed
+    currentIndex: number = 0;
+
+    Init(partjoint:PartJoint[])
+    {
+        let length = partjoint.length;
+        this.arrayJoint = new Array(length);
+        this.arrayStatus = new Array(length);
+        for(let i = 0;i<length;i++)
+        {
+            this.arrayStatus[i] = false;
+            this.arrayJoint[i] = new PartJoint();
+            this.arrayJoint[i].id = partjoint[i].id;
+            this.arrayJoint[i].x = partjoint[i].x;
+            this.arrayJoint[i].y = partjoint[i].y;
+        }
+        this.currentIndex = 0;
+    }
+    GetCurrentJointPos()
+    {
+        return new Vec3(this.arrayJoint[this.currentIndex].x,this.arrayJoint[this.currentIndex].y,0);
+    }
+    GetCurrentID()
+    {
+        return this.arrayJoint[this.currentIndex].id;
+    }
+    GoNextJoint()
+    {
+        let temp = (this.currentIndex+1)%this.arrayStatus.length;
+        if(this.arrayStatus[temp])
+        {
+            return false;
+        }
+        this.currentIndex = temp;
+        return true;
+    }
+};
 
 @ccclass('ShapeManager')
 export default class ShapeManager extends Component {
@@ -24,11 +65,8 @@ export default class ShapeManager extends Component {
     @property(cc.Node)
     timePlayNode: Node = null;
 
-    @property(cc.Node)
-    backgroudNode:Node = null;
-
     @property(cc.Prefab)
-    prefabShape: Prefab = null;
+    prefabParticle: Prefab = null;
 
     timeLevelRemaining: number = 0;
     timeLevelLabel: Label = null;
@@ -36,12 +74,14 @@ export default class ShapeManager extends Component {
     inputController:InputController = null;
     minMove: Vec2 = new Vec2(120,120);
 
-    shapesNode:Node = null;
-    currentShapeNode: Node = null;
+    shapeNode:Node = null;
+    currentParticleNode: Node = null;
     shapeHintNode: Node = null;
+    currentJoint:ShapeJointInfo = null;
 
     currentIndexShape: number = 0;
-    numberMatchedShape:number = -1;
+    arrayMatchedSpriteName:string[]=[];
+    deltaPartPosX: number = 0;
 
     textResult: string = 'FAILED';
 
@@ -63,11 +103,11 @@ export default class ShapeManager extends Component {
         this.inputController = this.node.parent.getComponent("InputController");
         if(this.currentLevelindex >= ShapeLevel.instance.LEVELDATA.length)
             this.currentLevelindex = 0;
-        this.shapesNode = GameManager.instance.GetAPNode().getChildByName("shapes");
-        if(this.shapesNode == null)
+        this.shapeNode = GameManager.instance.GetAPNode().getChildByName("shape");
+        if(this.shapeNode == null)
         {
-            this.shapesNode = new Node('shapes');
-            GameManager.instance.GetAPNode().addChild(this.shapesNode);
+            this.shapeNode = new Node('shape');
+            GameManager.instance.GetAPNode().addChild(this.shapeNode);
         }
         ResourcesManager.instance.LoadPrefabsFolder("Prefabs/ShapeTheCurves/Effects",false);
         this.LoadLevel(this.currentLevelindex);
@@ -85,17 +125,16 @@ export default class ShapeManager extends Component {
                     if(ResourcesManager.instance.isLoadFinished)
                     {
                         this.isLevelLoading = false;
-                        if(this.backgroudNode)
-                        {
-                            let bgsprite = this.backgroudNode.getComponentInChildren("cc.Sprite");
-                            if(bgsprite)
-                            {
-                                bgsprite._spriteFrame = ResourcesManager.instance.GetSprites("bg");
-                            }
-                        }
+                        
                         GameManager.instance.SwitchState(GAME_STATE.STATE_ACTION_PHASE);
-                        this.shapeHintNode = cc.instantiate(ResourcesManager.instance.GetPrefabs("shape-hint"));
-                        this.shapesNode.addChild(this.shapeHintNode);
+                        let bgsprite = GameManager.instance.GetAPNode().getChildByName('background-level').getComponentInChildren("cc.Sprite");
+                        if(bgsprite)
+                        {
+                            bgsprite._spriteFrame = ResourcesManager.instance.GetSprites("bg");
+                        }
+                        
+                        this.shapeHintNode = cc.instantiate(ResourcesManager.instance.GetPrefabs("particle-hint"));
+                        this.shapeNode.addChild(this.shapeHintNode);
                         this.shapeHintNode.setPosition(-9999,-9999,0);
                     }
                 }
@@ -106,7 +145,7 @@ export default class ShapeManager extends Component {
                    {
                         this.timeLevelLabel.string = "" + Math.round(this.timeLevelRemaining);
                     }
-                   this.timeLevelRemaining = this.currentLevelInfo.timeFinish -  GameManager.instance.GetTimeInAP();
+                   this.timeLevelRemaining = this.currentLevelInfo.timeLimited -  GameManager.instance.GetTimeInAP();
                    this.UpdateTouch();
                    this.UpdateGenerateShap();
                 }
@@ -135,22 +174,16 @@ export default class ShapeManager extends Component {
      LoadLevel(level:number)
      {
         GameManager.instance.SwitchState(GAME_STATE.STATE_LOADING);
-        this.shapesNode.removeAllChildren();
+        this.shapeNode.removeAllChildren();
         this.isLevelLoading = true;
-        this.currentShapeNode = null;
+        this.currentParticleNode = null;
         this.currentIndexShape = 0;
         this.textResult = 'FAILED';
 
         this.currentLevelInfo = ShapeLevel.instance.LEVELDATA[this.currentLevelindex];
         ResourcesManager.instance.LoadSpritFolder("Textures/ShapeTheCurves/levels/"+this.currentLevelInfo.levelName,true);
-        this.timeLevelRemaining = this.currentLevelInfo.timeFinish;
-        this.numberMatchedShape = 0;
-        this.currentLevelInfo.shapeInfo.forEach(element => {
-            if(element.targetPoint.r >=0)
-            {
-                this.numberMatchedShape++;
-            }
-        });
+        this.timeLevelRemaining = this.currentLevelInfo.timeLimited;
+       
      }
 
      UpdateTouch()
@@ -164,12 +197,12 @@ export default class ShapeManager extends Component {
                 if( deltamove.x > 0 )
                 {
                     //console.log("move right");
-                    this.MoveShape(SHAPE_MOVE_TYPE.MOVE_RIGHT);
+                    this.MoveParticle(PARTICLE_MOVE_TYPE.MOVE_RIGHT);
                 }
                 else
                 {
                     //console.log("move left");
-                    this.MoveShape(SHAPE_MOVE_TYPE.MOVE_LEFT);
+                    this.MoveParticle(PARTICLE_MOVE_TYPE.MOVE_LEFT);
                 }
            }
            else
@@ -177,7 +210,7 @@ export default class ShapeManager extends Component {
                 if( deltamove.y < 0 )
                 {
                     //console.log("move down");
-                    this.MoveShape(SHAPE_MOVE_TYPE.MOVE_DOWN);
+                    this.MoveParticle(PARTICLE_MOVE_TYPE.MOVE_DOWN);
                 }
             
            }
@@ -186,121 +219,160 @@ export default class ShapeManager extends Component {
         }
     }
 
-    MoveShape(mtype:SHAPE_MOVE_TYPE)
+    MoveParticle(mtype:PARTICLE_MOVE_TYPE)
     {
-        if(this.currentShapeNode)
+        if(this.currentParticleNode)
         {
-            let shapets = this.currentShapeNode.getComponent("Shape");
-            shapets.MoveShape(mtype);
+            let partts:Particle = this.currentParticleNode.getComponent("Particle");
+            partts.MoveParticle(mtype);
         }
     }
     
     UpdateGenerateShap()
     {
-        if(this.currentIndexShape > this.currentLevelInfo.shapeInfo.length || GameManager.instance.GetTimeInAP() > this.currentLevelInfo.timeFinish)
+        if(this.currentIndexShape > this.currentLevelInfo.partInfo.length || GameManager.instance.GetTimeInAP() > this.currentLevelInfo.timeLimited)
         {
             GameManager.instance.SwitchState(GAME_STATE.STATE_GAME_RESULT);
             let bg = GameManager.instance.GetResultNode();
             let bgsprite = bg.getChildByName('background')?.getComponentInChildren('cc.Sprite');
             bgsprite._spriteFrame = ResourcesManager.instance.GetSprites('bg');
-            if(this.numberMatchedShape<=0)
+
+            let isWin = true;
+            for(let i =0;i<this.arrayMatchedSpriteName.length;i++)
+            {
+                if(this.arrayMatchedSpriteName[i] == "")
+                {
+                    isWin = false;
+                    break;
+                }
+            }
+            if(isWin)
             {
                 this.textResult = 'Congratulation!';
             }
         }
         else
         {
-            if(this.currentShapeNode == null)
+            if(this.currentParticleNode == null)
             {
-                if(this.currentIndexShape>=this.currentLevelInfo.shapeInfo.length)
+                if(this.currentIndexShape>=this.currentLevelInfo.partInfo.length)
                 {
                     this.currentIndexShape++;
                     return;
                 }
-                let shapeinfo:ShapeInfo = this.currentLevelInfo.shapeInfo[this.currentIndexShape];
+                let partinfo:PartInfo = this.currentLevelInfo.partInfo[this.currentIndexShape];
                 //let node = new Node();
-                let node = cc.instantiate(this.prefabShape);
-                let shapets:Shape = node.getComponent('Shape');//node.addComponent('Shape') as Shape;
-                let rotatecontroller:RotateController = node.getComponent('RotateController');//node.addComponent('RotateController') as RotateController;
+                let node:Node = cc.instantiate(this.prefabParticle);
+                let partts:Particle = node.getComponent('Particle');//node.addComponent('Shape') as Shape;
                 let sprite:Sprite = node.getComponentInChildren('cc.Sprite');//node.addComponent('cc.Sprite') as Sprite;
-                sprite._spriteFrame = ResourcesManager.instance.GetSprites(shapeinfo.spriteName);
-                this.shapesNode.addChild(node);
-                node.setPosition(shapeinfo.startPoint.x,shapeinfo.startPoint.y,0);
-                node.setScale(new Vec3(shapeinfo.scale,shapeinfo.scale,shapeinfo.scale));
-                rotatecontroller.SetTimeRotate(0.2);
-                let rotate = shapeinfo.startPoint.r>=0?shapeinfo.startPoint.r:(Math.round((Math.random()*10))%4);
-                rotatecontroller.RotateToAngle(rotate*90,new Vec3(0,0,-1));
-                shapets.SetRotateStatus(rotate);
-                shapets.InitShape(shapeinfo,this.currentLevelInfo.minMoveX,this.currentLevelInfo.maxMoveX);
+                sprite._spriteFrame = ResourcesManager.instance.GetSprites(partinfo.spriteName);
+                node.children[0].setContentSize(cc.Size(sprite._spriteFrame._rect.width,sprite._spriteFrame._rect.height));
+                this.shapeNode.addChild(node);
+                node.setScale(partinfo.scale,partinfo.scale,partinfo.scale);
+                node.setPosition(partinfo.startPoint.x,partinfo.startPoint.y,0);
+                
+                partts.InitParticle(partinfo,this.currentLevelInfo.minMoveX,this.currentLevelInfo.maxMoveX);
                 this.currentIndexShape++;
-                this.currentShapeNode = node;
-                this.shapeHintNode.setPosition(shapeinfo.hintPoint.x,shapeinfo.hintPoint.y,0);
-                console.log("add shape " + this.currentIndexShape + " rotate: " + rotate);
+                this.currentParticleNode = node;
+
+                this.UpdateShapeJoint();
+                console.log("add shape " + this.currentIndexShape);
             }
             else
             {
-                let shapets:Shape = this.currentShapeNode.getComponent('Shape');
-                if(shapets.IsFinishMove())
+                let partts:Particle = this.currentParticleNode.getComponent('Particle');
+                
+                if(partts.IsFinishMove())
                 {
-                    this.currentShapeNode = null;
+                    if(this.IsFirstPart())
+                    {
+                        this.deltaPartPosX = this.currentParticleNode.position.x - this.currentLevelInfo.firstPartPoint.x;
+                    }
+                    this.currentParticleNode = null;
                 }
             }
         }
     }
-    RotateShape()
+
+    UpdateShapeJoint()
     {
-        if(this.currentShapeNode)
+        if(this.currentIndexShape <= 1)
         {
-            let rotatecontroller:RotateController = this.currentShapeNode.getComponent('RotateController');
-            if(rotatecontroller)
-            {
-                //rotatecontroller.SetTimeRotate(0.2);
-                rotatecontroller.DoRotate(ROTATE_TYPE.F);
-                this.currentShapeNode.getComponent("Shape").UpdateRotateStatus();
-            }
+            this.shapeHintNode.setPosition(-9999,-9999,0);
+        }
+        else
+        {
+            this.currentJoint = new ShapeJointInfo();
+            let partjoints:PartJoint[] = this.currentLevelInfo.partInfo[this.currentIndexShape-1].partJoints;
+            this.currentJoint.Init(partjoints);
+            this.shapeHintNode.setPosition(this.currentJoint.GetCurrentJointPos());
         }
     }
+    SwapShapeHint()
+    {
+        if(this.currentJoint.GoNextJoint())
+        {
+            this.shapeHintNode.setPosition(this.currentJoint.GetCurrentJointPos());
+        }
+    }
+
     DeleteShape()
     {
-        if(this.currentShapeNode)
+        if(this.currentParticleNode)
         {
-            let prefabexplosion = ResourcesManager.instance.GetPrefabs("shape-explosion");
+            let prefabexplosion = ResourcesManager.instance.GetPrefabs("particle-explosion");
             if(prefabexplosion)
             {
                 let nodeexplosion = cc.instantiate(prefabexplosion);
-                this.shapesNode.addChild(nodeexplosion);
-                nodeexplosion.setPosition(this.currentShapeNode.position);
+                this.shapeNode.addChild(nodeexplosion);
+                nodeexplosion.setPosition(this.currentParticleNode.position);
             }
-            this.currentShapeNode.removeFromParent();
-            this.currentShapeNode.getComponent("Shape").DeleteShape();
-            this.currentShapeNode = null;
+            this.currentParticleNode.removeFromParent();
+            this.currentParticleNode.getComponent("Particle").DeleteShape();
+            this.currentParticleNode = null;
         }
     }
 
     RestartLevel()
     {
-        this.shapesNode.removeAllChildren();
-        this.currentShapeNode = null;
+        this.shapeNode.removeAllChildren();
+        this.currentParticleNode = null;
         this.currentIndexShape = 0;
         this.textResult = 'FAILED';
         GameManager.instance.ResetTimeInGame();
         GameManager.instance.SwitchState(GAME_STATE.STATE_ACTION_PHASE);
-        this.numberMatchedShape = 0;
-        this.currentLevelInfo.shapeInfo.forEach(element => {
-            if(element.targetPoint.r >=0)
-            {
-                this.numberMatchedShape++;
-            }
-        });
-        this.shapeHintNode = cc.instantiate(ResourcesManager.instance.GetPrefabs("shape-hint"));
-        this.shapesNode.addChild(this.shapeHintNode);
+        
+        this.shapeHintNode = cc.instantiate(ResourcesManager.instance.GetPrefabs("particle-hint"));
+        this.shapeNode.addChild(this.shapeHintNode);
         this.shapeHintNode.setPosition(-9999,-9999,0);
     }
 
-    MatchedShape()
+    CheckMatchedParticle(spriteName:string)
     {
         console.log('this shape is matched');
-        this.numberMatchedShape--;
+        if(this.currentJoint.GetCurrentID() == spriteName)
+        {
+            for(let i =0;i<this.arrayMatchedSpriteName.length;i++)
+            {
+                if(this.arrayMatchedSpriteName[i] == "")
+                {
+                    this.arrayMatchedSpriteName[i] = spriteName;
+                    return;
+                }
+            }
+        }
+    }
+    IsFirstPart()
+    {
+        return (this.currentIndexShape==1);
+    }
+    GetDeltaPartPosX()
+    {
+        return this.deltaPartPosX;
+    }
+    GetLimitedLinePosy()
+    {
+        return this.currentLevelInfo.limitedLinePosY;
     }
 
     PauseGame()
