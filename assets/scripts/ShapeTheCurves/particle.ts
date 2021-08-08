@@ -1,5 +1,5 @@
 
-import { _decorator, Component,Vec3, Node, Vec2 } from 'cc';
+import { _decorator, Component,Vec3, Node, Vec2, CCLoader } from 'cc';
 import { PartInfo } from './shape-level';
 import ShapeManager from './shape-manager';
 const { ccclass, property } = _decorator;
@@ -30,6 +30,7 @@ export default class Particle extends Component {
         currentMoveType: PARTICLE_MOVE_TYPE = PARTICLE_MOVE_TYPE.NONE;
         isFinishMoving: boolean = false;
         enableFastMoveDown:boolean = false;
+        spriteHalfSize:cc.Size = new cc.Size(0,0);
     
         start () {
             // [3]
@@ -74,13 +75,9 @@ export default class Particle extends Component {
              let lineposy = ShapeManager.instance.GetLimitedLinePosy();
              let nearpos = this.GetNearestTarget(0);
 
-            if(this.node.position.x == nearpos.x && this.node.position.y == nearpos.y)
+            if(nodepos.y <= lineposy - this.spriteHalfSize.height)
             {
-                return;
-            }
-            if(nodepos.y <= lineposy)
-            {
-                nodepos.y = lineposy;
+                nodepos.y = lineposy - this.spriteHalfSize.height;
                 this.isFinishMoving = true;
                 this.CheckMacthParticle();
             }
@@ -88,6 +85,13 @@ export default class Particle extends Component {
             if(ShapeManager.instance.IsFirstPart() == false)
             {
                 let delta = ShapeManager.instance.GetDeltaPartPosX();
+                if((nodepos.x - delta - this.spriteHalfSize.width == nearpos.x ||  nodepos.x - delta + this.spriteHalfSize.width == nearpos.x) &&
+                    nodepos.y + this.spriteHalfSize.height <= nearpos.y)
+                {
+                    nodepos.y = lineposy - this.spriteHalfSize.height;
+                    this.isFinishMoving = true;
+                    this.CheckMacthParticle();
+                }
             }
     
          }
@@ -113,7 +117,7 @@ export default class Particle extends Component {
                         delta = this.minMoveX;
                     }
                     
-                    this.targetMoveX = this.node.position.x - delta;
+                    this.targetMoveX = this.node.position.x - delta - this.spriteHalfSize.width;
                 }
                 else if(mtype == PARTICLE_MOVE_TYPE.MOVE_RIGHT)
                 {
@@ -123,7 +127,7 @@ export default class Particle extends Component {
                         delta = this.minMoveX;
                     }
                     
-                    this.targetMoveX = this.node.position.x + delta;
+                    this.targetMoveX = this.node.position.x + delta - this.spriteHalfSize.width;
                 }
                 this.currentMoveType = mtype;
             }
@@ -134,7 +138,7 @@ export default class Particle extends Component {
             this.destroy();
         }
     
-        InitParticle(partinfo:PartInfo,minmove:number,maxmove:number)
+        InitParticle(partinfo:PartInfo,minmove:number,maxmove:number,spritesize:cc.Size)
         {
             this.partInfo = partinfo;
             this.isFinishMoving = false;
@@ -142,6 +146,8 @@ export default class Particle extends Component {
             this.enableFastMoveDown = false;
             this.minMoveX = minmove;
             this.maxMoveX = maxmove;
+            this.spriteHalfSize.width = spritesize.width/2;
+            this.spriteHalfSize.height = spritesize.height/2;
         }
        
         IsFinishMove()
@@ -166,14 +172,19 @@ export default class Particle extends Component {
         {
             let index = 0;
             let delta = ShapeManager.instance.GetDeltaPartPosX();
-            let x = this.partInfo.partJoints[index].x + delta;
-            let temp = Math.sqrt((this.node.position.x - x)*(this.node.position.x - x) + (this.node.position.y - this.partInfo.partJoints[index].y)*(this.node.position.y - this.partInfo.partJoints[index].y));
+            let arrayPos = ShapeManager.instance.GetReadyJointPos();
+            if(arrayPos.length == 0)
+            {
+                return new Vec2(-9999,ShapeManager.instance.GetLimitedLinePosy());
+            }
+            let x = arrayPos[index].x + delta;
+            let temp = Math.sqrt((this.node.position.x - x)*(this.node.position.x - x) + (this.node.position.y - arrayPos[index].y)*(this.node.position.y - arrayPos[index].y));
             if(temp == 0)
                 temp = defaultvalue;
-            for(let i = 1;i<this.partInfo.partJoints.length;i++)
+            for(let i = 1;i<arrayPos.length;i++)
             {
-                x = this.partInfo.partJoints[i].x + delta;
-                let temp2 =  Math.sqrt((this.node.position.x - x)*(this.node.position.x - x) + (this.node.position.y - this.partInfo.partJoints[i].y)*(this.node.position.y - this.partInfo.partJoints[i].y));
+                x = arrayPos[i].x + delta;
+                let temp2 =  Math.sqrt((this.node.position.x - x)*(this.node.position.x - x) + (this.node.position.y - arrayPos[i].y)*(this.node.position.y - arrayPos[i].y));
                 if(temp2 == 0)
                     temp2 = defaultvalue;
                 if(temp >  temp2)
@@ -182,7 +193,7 @@ export default class Particle extends Component {
                     index = i;
                 }
             }
-            return new Vec2(this.partInfo.partJoints[index].x,this.partInfo.partJoints[index].y);
+            return new Vec2(arrayPos[index].x,arrayPos[index].y);
         }
     }
     

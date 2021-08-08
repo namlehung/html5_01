@@ -11,41 +11,99 @@ const { ccclass, property } = _decorator;
 export class ShapeJointInfo
 {
     arrayJoint:PartJoint[] = [];
-    arrayStatus: boolean[] = [];//true: is jointed
+    arrayStatus: number[] = [];//0: watting 1: ready; 2: is jointed
     currentIndex: number = 0;
 
-    Init(partjoint:PartJoint[])
+    Init(currentlevel:ShapeLevelInfo)
     {
-        let length = partjoint.length;
+        let length = 0;
+        let i = 0,k=0;
+        for(;i<currentlevel.partInfo.length;i++)
+        {
+            length += currentlevel.partInfo[i].partJoints.length;
+        }
         this.arrayJoint = new Array(length);
         this.arrayStatus = new Array(length);
-        for(let i = 0;i<length;i++)
+        for(i=0;i<currentlevel.partInfo.length;i++)
         {
-            this.arrayStatus[i] = false;
-            this.arrayJoint[i] = new PartJoint();
-            this.arrayJoint[i].id = partjoint[i].id;
-            this.arrayJoint[i].x = partjoint[i].x;
-            this.arrayJoint[i].y = partjoint[i].y;
+            let partjoints = currentlevel.partInfo[i].partJoints;
+            for(let j=0;j<partjoints.length;j++)
+            {
+                this.arrayStatus[k] = 0;
+                this.arrayJoint[k] = new PartJoint();
+                this.arrayJoint[k].id = partjoints[j].id;
+                this.arrayJoint[k].x = partjoints[j].x;
+                this.arrayJoint[k].y = partjoints[j].y;
+                k++;
+            }
         }
         this.currentIndex = 0;
+    }
+    UpdateStatus(partjoints:PartJoint[])
+    {
+        for(let i = 0;i<this.arrayStatus.length;i++)
+        {
+            for(let j=0;j<partjoints.length;j++)
+            {
+                if(this.arrayJoint[i].id == partjoints[j].id)
+                {
+                    this.arrayStatus[i] = 1;
+                }
+            }
+        }
+    }
+    ResetStatus()
+    {
+        for(let i = 0;i<this.arrayStatus.length;i++)
+        {
+            this.arrayStatus[i] = 0;
+        }
     }
     GetCurrentJointPos()
     {
         return new Vec3(this.arrayJoint[this.currentIndex].x,this.arrayJoint[this.currentIndex].y,0);
     }
-    GetCurrentID()
+    GetCurrentTargetSpriteName()
     {
-        return this.arrayJoint[this.currentIndex].id;
+        let id = this.arrayJoint[this.currentIndex].id.indexOf(";");
+        if(id>0)
+        {
+            return this.arrayJoint[this.currentIndex].id.substring(id);
+        }
+        return "";
+    }
+    GetReadyJoint()
+    {
+        let l = 0,i = 0;
+        for(;i<this.arrayStatus.length;i++)
+        {
+            if(this.arrayStatus[i]== 1)
+            {
+                l++;
+            }
+        }
+        let arrayPos:Vec2[] = new Array(l);
+        l=0;
+        for(i=0;i<this.arrayStatus.length;i++)
+        {
+            if(this.arrayStatus[i]== 1)
+            {
+                arrayPos[l++] = new Vec2(this.arrayJoint[i].x,this.arrayJoint[i].y);
+            }
+        }
+        return arrayPos;
     }
     GoNextJoint()
     {
-        let temp = (this.currentIndex+1)%this.arrayStatus.length;
-        if(this.arrayStatus[temp])
+        for(let i = 0;i<this.arrayStatus.length;i++)
         {
-            return false;
+            if(this.currentIndex != i && this.arrayStatus[i]== 1)
+            {
+                this.currentIndex = i;
+                return true;
+            }
         }
-        this.currentIndex = temp;
-        return true;
+        return false;
     }
 };
 
@@ -80,8 +138,8 @@ export default class ShapeManager extends Component {
     currentJoint:ShapeJointInfo = null;
 
     currentIndexShape: number = 0;
-    arrayMatchedSpriteName:string[]=[];
     deltaPartPosX: number = 0;
+    numberMatchedPart:number = 0;
 
     textResult: string = 'FAILED';
 
@@ -183,7 +241,12 @@ export default class ShapeManager extends Component {
         this.currentLevelInfo = ShapeLevel.instance.LEVELDATA[this.currentLevelindex];
         ResourcesManager.instance.LoadSpritFolder("Textures/ShapeTheCurves/levels/"+this.currentLevelInfo.levelName,true);
         this.timeLevelRemaining = this.currentLevelInfo.timeLimited;
-       
+        if(this.currentJoint == null)
+        {
+            this.currentJoint = new ShapeJointInfo();
+        }
+        this.currentJoint.Init(this.currentLevelInfo);
+        this.numberMatchedPart = 0;
      }
 
      UpdateTouch()
@@ -236,17 +299,8 @@ export default class ShapeManager extends Component {
             let bg = GameManager.instance.GetResultNode();
             let bgsprite = bg.getChildByName('background')?.getComponentInChildren('cc.Sprite');
             bgsprite._spriteFrame = ResourcesManager.instance.GetSprites('bg');
-
-            let isWin = true;
-            for(let i =0;i<this.arrayMatchedSpriteName.length;i++)
-            {
-                if(this.arrayMatchedSpriteName[i] == "")
-                {
-                    isWin = false;
-                    break;
-                }
-            }
-            if(isWin)
+            
+            if(this.numberMatchedPart == this.currentLevelInfo.targetMacthedParticle)
             {
                 this.textResult = 'Congratulation!';
             }
@@ -266,12 +320,13 @@ export default class ShapeManager extends Component {
                 let partts:Particle = node.getComponent('Particle');//node.addComponent('Shape') as Shape;
                 let sprite:Sprite = node.getComponentInChildren('cc.Sprite');//node.addComponent('cc.Sprite') as Sprite;
                 sprite._spriteFrame = ResourcesManager.instance.GetSprites(partinfo.spriteName);
-                node.children[0].setContentSize(cc.Size(sprite._spriteFrame._rect.width,sprite._spriteFrame._rect.height));
+                let spriteSize = new cc.Size(sprite._spriteFrame._rect.width,sprite._spriteFrame._rect.height);
+                node.children[0].setContentSize(spriteSize);
                 this.shapeNode.addChild(node);
                 node.setScale(partinfo.scale,partinfo.scale,partinfo.scale);
                 node.setPosition(partinfo.startPoint.x,partinfo.startPoint.y,0);
                 
-                partts.InitParticle(partinfo,this.currentLevelInfo.minMoveX,this.currentLevelInfo.maxMoveX);
+                partts.InitParticle(partinfo,this.currentLevelInfo.minMoveX,this.currentLevelInfo.maxMoveX,spriteSize);
                 this.currentIndexShape++;
                 this.currentParticleNode = node;
 
@@ -302,9 +357,8 @@ export default class ShapeManager extends Component {
         }
         else
         {
-            this.currentJoint = new ShapeJointInfo();
             let partjoints:PartJoint[] = this.currentLevelInfo.partInfo[this.currentIndexShape-1].partJoints;
-            this.currentJoint.Init(partjoints);
+            this.currentJoint.UpdateStatus(partjoints);
             this.shapeHintNode.setPosition(this.currentJoint.GetCurrentJointPos());
         }
     }
@@ -345,21 +399,16 @@ export default class ShapeManager extends Component {
         this.shapeHintNode = cc.instantiate(ResourcesManager.instance.GetPrefabs("particle-hint"));
         this.shapeNode.addChild(this.shapeHintNode);
         this.shapeHintNode.setPosition(-9999,-9999,0);
+        this.numberMatchedPart = 0;
+        this.currentJoint.ResetStatus();
     }
 
     CheckMatchedParticle(spriteName:string)
     {
-        console.log('this shape is matched');
-        if(this.currentJoint.GetCurrentID() == spriteName)
+        if(this.currentJoint.GetCurrentTargetSpriteName() == spriteName)
         {
-            for(let i =0;i<this.arrayMatchedSpriteName.length;i++)
-            {
-                if(this.arrayMatchedSpriteName[i] == "")
-                {
-                    this.arrayMatchedSpriteName[i] = spriteName;
-                    return;
-                }
-            }
+            console.log('this shape is matched');
+            this.numberMatchedPart ++;
         }
     }
     IsFirstPart()
@@ -374,7 +423,10 @@ export default class ShapeManager extends Component {
     {
         return this.currentLevelInfo.limitedLinePosY;
     }
-
+    GetReadyJointPos()
+    {
+        return this.currentJoint.GetReadyJoint();
+    }
     PauseGame()
     {
         GameManager.instance.PauseGame();

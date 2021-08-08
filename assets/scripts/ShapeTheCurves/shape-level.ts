@@ -22,6 +22,7 @@ export class PartInfo
     fallSpeed:number = 0;
     moveSpeed:number = 0;
     startPoint:PartPoint;
+    endPoint:PartPoint;
     partJoints: PartJoint[] = [];
 };
 
@@ -49,38 +50,35 @@ export default class ShapeLevel {
     LEVEL1:ShapeLevelInfo = {"levelName":"bambi","timeLimited": 50,"targetMacthedParticle":3,"minMoveX":40,"maxMoveX":50,"limitedLinePosY":-300,"firstPartPoint":{"x":-100,"y":-300},
                         "partInfo": [
                             {
-                                "spriteName":"1","scale":1.5,"fallSpeed":2,"moveSpeed":10,"startPoint":{"x":0,"y":300},
+                                "spriteName":"1","scale":1.5,"fallSpeed":2,"moveSpeed":10,"startPoint":{"x":0,"y":300},"endPoint":{"x":0,"y":300},
                                 "partJoints": [
-                                    {"x":-20,"y":-250,"id":"2"},
-                                    {"x":-20,"y":-250,"id":"5"}
+                                    {"x":-20,"y":-250,"id":"1;2"},
+                                    {"x":-20,"y":-250,"id":"1;5"}
                                 ]
                             },
                             {
-                                "spriteName":"2","scale":1.5,"fallSpeed":2,"moveSpeed":10,"startPoint":{"x":0,"y":300},
+                                "spriteName":"2","scale":1.5,"fallSpeed":2,"moveSpeed":10,"startPoint":{"x":0,"y":300},"endPoint":{"x":0,"y":300},
                                 "partJoints": [
-                                    {"x":-20,"y":-250,"id":"2"},
-                                    {"x":-20,"y":-250,"id":"3"}
+                                    {"x":-20,"y":-250,"id":"2;3"}
                                 ]
                             },
                             {
-                                "spriteName":"3","scale":1.5,"fallSpeed":2,"moveSpeed":10,"startPoint":{"x":0,"y":300},
+                                "spriteName":"3","scale":1.5,"fallSpeed":2,"moveSpeed":10,"startPoint":{"x":0,"y":300},"endPoint":{"x":0,"y":300},
                                 "partJoints": [
-                                    {"x":-20,"y":-250,"id":"4"},
-                                    {"x":-20,"y":-250,"id":"5"}
+                                    {"x":-20,"y":-250,"id":"3;4"},
                                 ]
                             },
                             {
-                                "spriteName":"4","scale":1.5,"fallSpeed":2,"moveSpeed":10,"startPoint":{"x":0,"y":300},
+                                "spriteName":"4","scale":1.5,"fallSpeed":2,"moveSpeed":10,"startPoint":{"x":0,"y":300},"endPoint":{"x":0,"y":300},
                                 "partJoints": [
-                                    {"x":-20,"y":-250,"id":"1"},
-                                    {"x":-20,"y":-250,"id":"2"}
+                                    {"x":-20,"y":-250,"id":"4;1"},
+                                    {"x":-20,"y":-250,"id":"4;3"}
                                 ]
                             },
                             {
-                                "spriteName":"5","scale":1.5,"fallSpeed":2,"moveSpeed":10,"startPoint":{"x":0,"y":300},
+                                "spriteName":"5","scale":1.5,"fallSpeed":2,"moveSpeed":10,"startPoint":{"x":0,"y":300},"endPoint":{"x":0,"y":300},
                                 "partJoints": [
-                                    {"x":-20,"y":-250,"id":"1"},
-                                    {"x":-20,"y":-250,"id":"2"}
+                                    {"x":-20,"y":-250,"id":"5;1"}
                                 ]
                             },
                         ],
