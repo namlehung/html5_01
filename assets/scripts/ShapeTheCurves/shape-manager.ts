@@ -238,7 +238,7 @@ export default class ShapeManager extends Component {
         this.currentIndexShape = 0;
         this.textResult = 'FAILED';
 
-        this.currentLevelInfo = ShapeLevel.instance.LEVELDATA[this.currentLevelindex];
+        this.currentLevelInfo = ShapeLevel.instance.GetLevelInfos(this.currentLevelindex);
         ResourcesManager.instance.LoadSpritFolder("Textures/ShapeTheCurves/levels/"+this.currentLevelInfo.levelName,true);
         this.timeLevelRemaining = this.currentLevelInfo.timeLimited;
         if(this.currentJoint == null)

@@ -1,5 +1,5 @@
 
-import { _decorator, Component, Node, Vec3 } from 'cc';
+import { _decorator, Component, Node, Vec3, TiledUserNodeData } from 'cc';
 const { ccclass, property } = _decorator;
 
 export class PartPoint
@@ -24,6 +24,52 @@ export class PartInfo
     startPoint:PartPoint;
     endPoint:PartPoint;
     partJoints: PartJoint[] = [];
+    
+    Clone():PartInfo
+    {
+        let partinfo = new PartInfo();
+        partinfo.spriteName = this.spriteName;
+        partinfo.scale = this.scale;
+        partinfo.fallSpeed = this.fallSpeed;
+        partinfo.moveSpeed = this.moveSpeed;
+        partinfo.startPoint = new PartPoint();
+        partinfo.startPoint.x = this.startPoint.x;
+        partinfo.startPoint.y = this.startPoint.y;
+        partinfo.endPoint = new PartPoint();
+        partinfo.endPoint.x= this.endPoint.x;
+        partinfo.endPoint.y = this.endPoint.y;
+        partinfo.partJoints = [];
+        for(let i = 0;i<this.partJoints.length;i++)
+        {
+            let partjoint = new PartJoint();
+            partjoint.x = this.partJoints[i].x;
+            partjoint.y = this.partJoints[i].y;
+            partjoint.id = this.partJoints[i].id;
+            partinfo.partJoints.push(partjoint);
+        }
+        return partinfo;
+    }
+
+    SetValue(partinfo:PartInfo)
+    {
+        this.spriteName = partinfo.spriteName;
+        this.scale = partinfo.scale;
+        this.fallSpeed = partinfo.fallSpeed;
+        this.moveSpeed = partinfo.moveSpeed;
+        this.startPoint.x = partinfo.startPoint.x;
+        this.startPoint.y = partinfo.startPoint.y;
+        this.endPoint.x = partinfo.endPoint.x;
+        this.endPoint.y = partinfo.endPoint.y;
+        this.partJoints = [];
+        for(let i = 0;i<partinfo.partJoints.length;i++)
+        {
+            let partjoint = new PartJoint();
+            partjoint.x = partinfo.partJoints[i].x;
+            partjoint.y = partinfo.partJoints[i].y;
+            partjoint.id = partinfo.partJoints[i].id;
+            this.partJoints.push(partjoint);
+        }
+    }
 };
 
 export class ShapeLevelInfo{
@@ -83,6 +129,20 @@ export default class ShapeLevel {
                         ],
                     };
     LEVELDATA:ShapeLevelInfo[] = [this.LEVEL1];
+
+    GetLevelInfos(index: number){
+        let value = cc.sys.localStorage.getItem("SHAPETHECURVES_CURRENT_LEVEL");
+        if(value && value.length > 0)
+        {
+            let levelinfos = JSON.parse(value);
+            return levelinfos;
+        }
+        if(index < 0 || index >= this.LEVELDATA.length)
+        {
+            index = 0;
+        }
+        return this.LEVELDATA[index];
+    }
    
 }
 

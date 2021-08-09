@@ -1,6 +1,7 @@
 
 import { _decorator, Component, Node } from 'cc';
 import ResourcesManager from '../../Manager/resource-manager';
+import DlParticleEdit from './dl-particle-edit';
 const { ccclass, property } = _decorator;
 
 @ccclass('DlSelectSprite')
@@ -18,7 +19,6 @@ export class DlSelectSprite extends Component {
     spritesName:string[] = [];
     start () {
         // [3]
-        
     }
 
     Init()
@@ -44,21 +44,9 @@ export class DlSelectSprite extends Component {
                 this.node.getChildByName(item)?.getComponent("ButtonLevel").SetSelectedButton(false);
             }
         });
+        DlParticleEdit.instance.AddParticle(name);
     }
 
-    MoveUpSelect()
-    {
-
-    }
-    MoveDownSelect()
-    {
-
-    }
-
-    RemoveParticle()
-    {
-
-    }
 }
 
 /**

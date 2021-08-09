@@ -27,7 +27,7 @@ export default class ResourcesManager {
     ReleaseSprite(data:any){
         for(let key in data)
         {
-            cc.console.log("----release Sprite: " + key)
+            cc.log("----release Sprite: " + key)
             cc.assetManager.releaseAsset(data[key]);
         }
     }

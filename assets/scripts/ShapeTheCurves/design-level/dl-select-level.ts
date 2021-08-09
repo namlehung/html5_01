@@ -1,10 +1,11 @@
 
 import { _decorator, Component, Node, Prefab, CCLoader } from 'cc';
 import ResourcesManager from '../../Manager/resource-manager';
+import DlExportleveljs from './dl-exportleveljs';
 const { ccclass, property } = _decorator;
 
 @ccclass('DlSelectLevel')
-export class DlSelectLevel extends Component {
+export default class DlSelectLevel extends Component {
     // [1]
     // dummy = '';
 
@@ -21,6 +22,17 @@ export class DlSelectLevel extends Component {
     isLoadSprite:boolean = false;
 
     levels:string[] = ["bambi"];
+
+    /*private static _instance:DlSelectLevel = null;
+    static get instance(){
+        return DlSelectLevel._instance;
+    }
+    
+    onLoad()
+    {
+        DlSelectLevel._instance = this.node.getComponent("DlSelectLevel");
+    }*/
+
     start () {
         // [3]
         
@@ -44,6 +56,7 @@ export class DlSelectLevel extends Component {
         });
         this.isLoadSprite = true;
         ResourcesManager.instance.LoadSpritFolder("Textures/ShapeTheCurves/levels/"+name,true);
+        DlExportleveljs.instance.SetLevelName(name);
     }
 
     update (deltaTime: number) {
