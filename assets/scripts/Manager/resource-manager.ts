@@ -80,6 +80,15 @@ export default class ResourcesManager {
     GetPrefabs(name:string): any{
         return this.arrayPrefab[name];
     }
+    GetArraySpriteName()
+    {
+        let arraySpriteName:string[] = [];
+        for(let key in this.arraySprite)
+        {
+            arraySpriteName.push(key);
+        }
+        return arraySpriteName;
+    }
 }
 
 /**

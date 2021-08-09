@@ -33,7 +33,6 @@ export class ShapeLevelInfo{
     minMoveX:number = 0;
     maxMoveX:number = 0;
     limitedLinePosY: number = 0;
-    firstPartPoint:PartPoint;
     partInfo:PartInfo[] =[];
 };
 
@@ -47,7 +46,7 @@ export default class ShapeLevel {
         return ShapeLevel._instance;
     }
     
-    LEVEL1:ShapeLevelInfo = {"levelName":"bambi","timeLimited": 50,"targetMacthedParticle":3,"minMoveX":40,"maxMoveX":50,"limitedLinePosY":-300,"firstPartPoint":{"x":-100,"y":-300},
+    LEVEL1:ShapeLevelInfo = {"levelName":"bambi","timeLimited": 50,"targetMacthedParticle":3,"minMoveX":40,"maxMoveX":50,"limitedLinePosY":-300,
                         "partInfo": [
                             {
                                 "spriteName":"1","scale":1.5,"fallSpeed":2,"moveSpeed":10,"startPoint":{"x":0,"y":300},"endPoint":{"x":0,"y":300},

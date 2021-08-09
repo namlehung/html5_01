@@ -341,7 +341,7 @@ export default class ShapeManager extends Component {
                 {
                     if(this.IsFirstPart())
                     {
-                        this.deltaPartPosX = this.currentParticleNode.position.x - this.currentLevelInfo.firstPartPoint.x;
+                        this.deltaPartPosX = this.currentParticleNode.position.x - this.currentParticleNode.position.x;
                     }
                     this.currentParticleNode = null;
                 }
