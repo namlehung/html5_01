@@ -1,5 +1,5 @@
 
-import { _decorator, Component, Node, Vec2, Vec3 } from 'cc';
+import { _decorator, Component, Node, Vec2, Vec3, TERRAIN_HEIGHT_BASE } from 'cc';
 import { PartInfo, PartJoint, PartPoint } from '../shape-level';
 import DlExportleveljs from './dl-exportleveljs';
 const { ccclass, property } = _decorator;
@@ -33,6 +33,10 @@ export default class DlParticleEdit extends Component {
     @property(Node)
     inputPosyNode:Node = null;
 
+    @property(Node)
+    nodeJoint:Node= null;
+
+
     listPart:PartInfo[] = [];
     selectedPartName:string = "";
     currentPartInfo:PartInfo[] = [];
@@ -53,7 +57,6 @@ export default class DlParticleEdit extends Component {
         {
             this.inputNode.active = false;
         }
-        
     }
 
     AddParticle(name:string)
@@ -78,6 +81,18 @@ export default class DlParticleEdit extends Component {
         DlExportleveljs.instance.UpdatePartInfo(this.currentPartInfo);
     }
 
+    ShowParticleInfo(partinfos:PartInfo[])
+    {
+        for(let i =0;i<partinfos.length;i++)
+        {
+            let name = partinfos[i].spriteName;
+            let node = cc.instantiate(this.prefabbuttonlevel);
+            node.getComponent("ButtonLevel").InitButton(name,"DlParticleEdit");
+            node.name = name;
+            this.node.addChild(node);
+        }
+        this.currentPartInfo = partinfos;
+    }
     GetCurrentPartinfo()
     {
         let partinfo = null;
@@ -105,9 +120,20 @@ export default class DlParticleEdit extends Component {
                 this.currentPartInfo[i].moveSpeed = partinfo.moveSpeed;
             }
         }
+        this.nodeJoint.getComponent("DlJoints").UpdateJointInfo(partinfo.partJoints);
         DlExportleveljs.instance.UpdatePartInfo(this.currentPartInfo);
     }
-
+    UpdateJointInfo(partjoints:PartJoint[])
+    {
+        for(let i = 0;i<this.currentPartInfo.length;i++)
+        {
+            if(this.selectedPartName == this.currentPartInfo[i].spriteName)
+            {
+                this.currentPartInfo[i].partJoints = partjoints;
+            }
+        }
+        DlExportleveljs.instance.UpdatePartInfo(this.currentPartInfo);
+    }
     UpdateSelect(name:string)
     {
         this.selectedPartName = name;
@@ -122,6 +148,7 @@ export default class DlParticleEdit extends Component {
         }
         this.inputNode.active = true;
         this.UpdateDisplayCurrentPartinfo();
+        this.nodeJoint.getComponent("DlJoints").ShowJointInfo();
     }
 
     UpdateDisplayCurrentPartinfo()
@@ -214,6 +241,7 @@ export default class DlParticleEdit extends Component {
             if(child.name == this.selectedPartName)
             {
                 this.selectedPartName = "";
+                this.nodeJoint.getComponent("DlJoints").HideInputJoint();
                 this.inputNode.active = false;
                 child.destroy();
                 break;
@@ -232,6 +260,11 @@ export default class DlParticleEdit extends Component {
             this.currentPartInfo[i].SetValue(this.currentPartInfo[i+1]);
         }
         this.currentPartInfo.pop();
+    }
+
+    GetCurrentJointIndex()
+    {
+        return this.nodeJoint.getComponent("DlJoints").GetcurrentJointindex();
     }
 }
 

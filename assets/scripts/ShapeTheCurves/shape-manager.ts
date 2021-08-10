@@ -140,6 +140,7 @@ export default class ShapeManager extends Component {
     currentIndexShape: number = 0;
     deltaPartPosX: number = 0;
     numberMatchedPart:number = 0;
+    isWrongPart:boolean = false;
 
     textResult: string = 'FAILED';
 
@@ -293,14 +294,14 @@ export default class ShapeManager extends Component {
     
     UpdateGenerateShap()
     {
-        if(this.currentIndexShape > this.currentLevelInfo.partInfo.length || GameManager.instance.GetTimeInAP() > this.currentLevelInfo.timeLimited)
+        if(this.isWrongPart || this.currentIndexShape > this.currentLevelInfo.partInfo.length || GameManager.instance.GetTimeInAP() > this.currentLevelInfo.timeLimited)
         {
             GameManager.instance.SwitchState(GAME_STATE.STATE_GAME_RESULT);
             let bg = GameManager.instance.GetResultNode();
             let bgsprite = bg.getChildByName('background')?.getComponentInChildren('cc.Sprite');
             bgsprite._spriteFrame = ResourcesManager.instance.GetSprites('bg');
             
-            if(this.numberMatchedPart == this.currentLevelInfo.targetMacthedParticle)
+            if(this.isWrongPart == false)//this.numberMatchedPart == this.currentLevelInfo.targetMacthedParticle)
             {
                 this.textResult = 'Congratulation!';
             }
@@ -329,6 +330,7 @@ export default class ShapeManager extends Component {
                 partts.InitParticle(partinfo,this.currentLevelInfo.minMoveX,this.currentLevelInfo.maxMoveX,spriteSize);
                 this.currentIndexShape++;
                 this.currentParticleNode = node;
+                this.isWrongPart = false;
 
                 this.UpdateShapeJoint();
                 console.log("add shape " + this.currentIndexShape);
@@ -409,6 +411,10 @@ export default class ShapeManager extends Component {
         {
             console.log('this shape is matched');
             this.numberMatchedPart ++;
+        }
+        else
+        {
+            this.isWrongPart = true;
         }
     }
     IsFirstPart()

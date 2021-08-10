@@ -39,7 +39,7 @@ export class DlSelectSprite extends Component {
     {
         console.log("DlSelectSprite update button: " + name);
         this.spritesName.forEach(item =>{
-            if(item != name)
+            //if(item != name)
             {
                 this.node.getChildByName(item)?.getComponent("ButtonLevel").SetSelectedButton(false);
             }

@@ -1,6 +1,7 @@
 
 import { _decorator, Component, Node, CCLoader, TERRAIN_NORTH_INDEX } from 'cc';
-import { PartInfo, ShapeLevelInfo } from '../shape-level';
+import ShapeLevel, { PartInfo, ShapeLevelInfo } from '../shape-level';
+import DlParticleEdit from './dl-particle-edit';
 const { ccclass, property } = _decorator;
 
 @ccclass('DlExportleveljs')
@@ -11,6 +12,14 @@ export default class DlExportleveljs extends Component {
     // [2]
     // @property
     // serializableDummy = 0;
+    @property(Node)
+    inputtime:Node = null;
+    @property(Node)
+    inputminmovex:Node = null;
+    @property(Node)
+    inputmaxmovex:Node = null;
+    @property(Node)
+    inputlinelimited:Node = null;
 
     levelinfo: ShapeLevelInfo;
     editBox: cc.EditBox;
@@ -24,16 +33,23 @@ export default class DlExportleveljs extends Component {
     onLoad()
     {
         DlExportleveljs._instance = this.node.getComponent("DlExportleveljs");
+        this.levelinfo = ShapeLevel.instance.GetLevelInfos(0);
     }
 
     start () {
         // [3]
-        this.levelinfo = new ShapeLevelInfo();
+        /*this.levelinfo = new ShapeLevelInfo();
         this.levelinfo.timeLimited = this.GetDefaultTime();
         this.levelinfo.minMoveX = this.GetDefaultMinMove();
         this.levelinfo.maxMoveX = this.GetDefaultMaxMove();
-        this.levelinfo.limitedLinePosY = this.GetDefaultLineLimited();
+        this.levelinfo.limitedLinePosY = this.GetDefaultLineLimited();*/
         this.editBox = this.node.getComponentInChildren("cc.EditBox");
+        this.isNeedUpdateDisplay = true;
+        DlParticleEdit.instance.ShowParticleInfo(this.levelinfo.partInfo);
+        this.inputtime.getComponent("cc.EditBox").string = "" + this.levelinfo.timeLimited;
+        this.inputmaxmovex.getComponent("cc.EditBox").string = "" + this.levelinfo.maxMoveX;
+        this.inputminmovex.getComponent("cc.EditBox").string = "" + this.levelinfo.minMoveX;
+        this.inputlinelimited.getComponent("cc.EditBox").string = "" + this.levelinfo.limitedLinePosY;
     }
 
     update (deltaTime: number) {
@@ -46,19 +62,19 @@ export default class DlExportleveljs extends Component {
 
     GetDefaultTime()
     {
-        return 50;
+        return this.levelinfo.timeLimited;
     }
     GetDefaultMinMove()
     {
-        return 40;
+        return this.levelinfo.minMoveX;
     }
     GetDefaultMaxMove()
     {
-        return 50;
+        return this.levelinfo.maxMoveX;
     }
     GetDefaultLineLimited()
     {
-        return -300;
+        return this.levelinfo.limitedLinePosY;
     }
     SetLevelName(name:string)
     {
@@ -92,15 +108,21 @@ export default class DlExportleveljs extends Component {
         this.isNeedUpdateDisplay = true;
     }
 
-    SaveAndPlayLevel()
+    PlayLevel()
+    {
+        //cc.sys.localStorage.setItem("SHAPETHECURVES_CURRENT_LEVEL",JSON.stringify(this.levelinfo));
+        cc.director.loadScene("shapethecurves");
+    }
+    SaveLevel()
     {
         cc.sys.localStorage.setItem("SHAPETHECURVES_CURRENT_LEVEL",JSON.stringify(this.levelinfo));
-        cc.director.loadScene("shapethecurves");
+        //cc.director.loadScene("shapethecurves");
     }
 
     DisplayLevelInfo()
     {
-        this.editBox.string  = JSON.stringify(this.levelinfo);
+        let strdisplay =  JSON.stringify(this.levelinfo);
+        this.editBox.string  = strdisplay;
         /*let labelnode:Node = this.node.children[0].getChildByName("TEXT_LABEL");
         if(labelnode)
         {

@@ -87,6 +87,30 @@ export class Editboxinputvalue extends Component {
             parinfo.endPoint.y = value;
             DlParticleEdit.instance.UpdateCurrentPartinfo(parinfo);
         }
+        else if(customEventData=="jointposx")
+        {
+            value = Number.parseFloat(stringvalue);
+            let parinfo:PartInfo = DlParticleEdit.instance.GetCurrentPartinfo();
+            let index = DlParticleEdit.instance.GetCurrentJointIndex();
+            parinfo.partJoints[index].x = value;
+            DlParticleEdit.instance.UpdateCurrentPartinfo(parinfo);
+        }
+        else if(customEventData=="jointposy")
+        {
+            value = Number.parseFloat(stringvalue);
+            let parinfo:PartInfo = DlParticleEdit.instance.GetCurrentPartinfo();
+            let index = DlParticleEdit.instance.GetCurrentJointIndex();
+            parinfo.partJoints[index].y = value;
+            DlParticleEdit.instance.UpdateCurrentPartinfo(parinfo);
+        }
+        else if(customEventData=="jointtarget")
+        {
+            let parinfo:PartInfo = DlParticleEdit.instance.GetCurrentPartinfo();
+            let index = DlParticleEdit.instance.GetCurrentJointIndex();
+            parinfo.partJoints[index].id = stringvalue;
+            DlParticleEdit.instance.UpdateCurrentPartinfo(parinfo);
+        }
+
     }
 }
 
