@@ -21,9 +21,17 @@ export default class DlExportleveljs extends Component {
     @property(Node)
     inputlinelimited:Node = null;
 
+    @property(Node)
+    lineNode:Node = null;
+
+    @property(Node)
+    gameNode:Node = null;
+
     levelinfo: ShapeLevelInfo;
     editBox: cc.EditBox;
     isNeedUpdateDisplay: boolean = false;
+
+
 
     private static _instance:DlExportleveljs = null;
     static get instance(){
@@ -100,6 +108,7 @@ export default class DlExportleveljs extends Component {
     UpdateLineLimited(linelimited:number)
     {
         this.levelinfo.limitedLinePosY = linelimited;
+        this.lineNode.setPosition(0,this.levelinfo.limitedLinePosY);
         this.isNeedUpdateDisplay = true;
     }
     UpdatePartInfo(partinfos:PartInfo[])
@@ -121,6 +130,7 @@ export default class DlExportleveljs extends Component {
 
     DisplayLevelInfo()
     {
+        this.lineNode.setPosition(0,this.levelinfo.limitedLinePosY);
         let strdisplay =  JSON.stringify(this.levelinfo);
         this.editBox.string  = strdisplay;
         /*let labelnode:Node = this.node.children[0].getChildByName("TEXT_LABEL");

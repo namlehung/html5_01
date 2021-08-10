@@ -97,6 +97,9 @@ export default class GameManager extends Component{
     GetResultNode(){
         return this.nodeGameState[GAME_STATE.STATE_GAME_RESULT];
     }
+    GetIGMNode(){
+        return this.nodeGameState[GAME_STATE.STATE_IGM];
+    }
     ResetTimeInGame()
     {
         this.timeInGame = 0;

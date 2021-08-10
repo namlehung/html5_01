@@ -39,10 +39,6 @@ export class InputController extends Component {
         this.touchSize = this.node.getContentSize();
         this.touchSize.width *= this.node.getScale().x;
         this.touchSize.height *= this.node.getScale().y;
-        if(this.node.name=='Canvas')
-            this.nodePosition = new Vec3(0,0,0);
-        else
-            this.nodePosition = this.node.getPosition();
 
         console.log("node size: " + this.touchSize + " canvas size: " + this.canvasSize);
         this.node.on(cc.Node.EventType.TOUCH_START,this.onTouchStart,this);
@@ -60,14 +56,14 @@ export class InputController extends Component {
     }
 
     onTouchStart(event: cc.Event.EventTouch){
-        //console.log("-----------on touch start: " + event.getLocation());
         let pos:Vec2 = this.GetRealPosTouch(event.getLocation());
+        //console.log("-on touch start: " + event.getLocation() + " real pos: " + pos);
         if(this.IsOutTouchArea(pos))
         {
             return;
         }
         this.timePreTouchStart = this.timeCurrentTouchStart;
-        this.timeCurrentTouchStart = GameManager.instance.GetCurrentTime();
+        this.timeCurrentTouchStart = GameManager.instance?.GetCurrentTime();
         this.isTouchStart = true;
         this.isTouchEnd = false;
         this.posTouchStart = pos;
@@ -126,14 +122,14 @@ export class InputController extends Component {
 
     private IsOutTouchArea(pos:Vec2):boolean
     {
-        //this.nodePosition = this.node.getPosition();
-        if(pos.x < this.nodePosition.x - this.touchSize.width/2
-            || pos.x > this.nodePosition.x + this.touchSize.width/2)
+        let worldpos  = this.node.worldPosition;
+        if(pos.x <-this.touchSize.width/2
+            || pos.x >this.touchSize.width/2)
         {
             return true;
         }
-        if(pos.y < this.nodePosition.y - this.touchSize.height/2
-            || pos.y > this.nodePosition.y + this.touchSize.height/2)
+        if(pos.y <  - this.touchSize.height/2
+            || pos.y > this.touchSize.height/2)
         {
              return true;
         }
@@ -145,11 +141,11 @@ export class InputController extends Component {
         let result: Vec2 = new Vec2(pos.x,pos.y);
         if(this.canvasAnchor.x == 0.5)
         {
-            result.x -= this.canvasSize.width/2;
+            result.x -= this.node.worldPosition.x;
         }
         if(this.canvasAnchor.y == 0.5)
         {
-            result.y -= this.canvasSize.height/2;
+            result.y -= this.node.worldPosition.y;
         }
         return result;
     }
@@ -178,7 +174,6 @@ export class InputController extends Component {
         //console.log("posstart: " + this.posTouchStart)
     }
     SetNodePosition(pos:Vec3){
-        this.nodePosition = pos;
     }
 }
 /**

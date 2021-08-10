@@ -1,5 +1,7 @@
 
 import { _decorator, Component, Node, Vec2, Vec3, TERRAIN_HEIGHT_BASE } from 'cc';
+import { InputController } from '../../Controller/input-controller';
+import ResourcesManager from '../../Manager/resource-manager';
 import { PartInfo, PartJoint, PartPoint } from '../shape-level';
 import DlExportleveljs from './dl-exportleveljs';
 const { ccclass, property } = _decorator;
@@ -36,10 +38,16 @@ export default class DlParticleEdit extends Component {
     @property(Node)
     nodeJoint:Node= null;
 
+    @property(Node)
+    spritesNode:Node = null;
+
+    inputController:InputController;
 
     listPart:PartInfo[] = [];
     selectedPartName:string = "";
     currentPartInfo:PartInfo[] = [];
+    isNeedUpdateDisPlaySprite:boolean = false;
+    isOnlyUpdateSpritePos:boolean = true;
 
     private static _instance:DlParticleEdit = null;
     static get instance(){
@@ -57,6 +65,15 @@ export default class DlParticleEdit extends Component {
         {
             this.inputNode.active = false;
         }
+        this.inputController = this.spritesNode.parent.getComponent("InputController");
+        this.isNeedUpdateDisPlaySprite = true;
+        this.isOnlyUpdateSpritePos = false;
+    }
+
+    update (deltaTime: number)
+    {
+        this.UpdateDisplaySprite();
+        this.UpdateSpritePos();
     }
 
     AddParticle(name:string)
@@ -79,8 +96,59 @@ export default class DlParticleEdit extends Component {
         partinfo.moveSpeed = 10;
         this.currentPartInfo.push(partinfo);
         DlExportleveljs.instance.UpdatePartInfo(this.currentPartInfo);
+
+        let node2:Node = cc.instantiate(this.prefabParticleNode);
+        let sprite:Sprite = node2.getComponentInChildren('cc.Sprite');//node.addComponent('cc.Sprite') as Sprite;
+        sprite._spriteFrame = ResourcesManager.instance.GetSprites(partinfo.spriteName);
+        let spriteSize = new cc.Size(sprite._spriteFrame._rect.width,sprite._spriteFrame._rect.height);
+        node2.children[0].setContentSize(spriteSize);
+        node2.name = partinfo.spriteName;
+        this.spritesNode.addChild(node2);
+        node2.setPosition(partinfo.endPoint.x,partinfo.endPoint.y,0);
     }
 
+    UpdateDisplaySprite()
+    {
+        if(this.isNeedUpdateDisPlaySprite)
+        {
+            if(ResourcesManager.instance.IsLoadedSpriteFolder(DlExportleveljs.instance.levelinfo.levelName))
+            {
+                this.isNeedUpdateDisPlaySprite = false;
+                if(this.isOnlyUpdateSpritePos)
+                {
+                    for(let i = 0;i<this.spritesNode.children.length;i++)
+                    {
+                        let partinfo = this.currentPartInfo[i];
+                        let node:Node = this.spritesNode.children[i];
+                        node.setPosition(partinfo.endPoint.x,partinfo.endPoint.y,0);
+                    }
+                }
+                else
+                {
+                    this.spritesNode.removeAllChildren();
+                    for(let i = 0;i<this.currentPartInfo.length;i++)
+                    {
+                        let partinfo = this.currentPartInfo[i];
+                        let node:Node = cc.instantiate(this.prefabParticleNode);
+                        let sprite:Sprite = node.getComponentInChildren('cc.Sprite');//node.addComponent('cc.Sprite') as Sprite;
+                        sprite._spriteFrame = ResourcesManager.instance.GetSprites(partinfo.spriteName);
+                        let spriteSize = new cc.Size(sprite._spriteFrame._rect.width,sprite._spriteFrame._rect.height);
+                        node.children[0].setContentSize(spriteSize);
+                        node.name = partinfo.spriteName;
+                        this.spritesNode.addChild(node);
+                        node.setPosition(partinfo.endPoint.x,partinfo.endPoint.y,0);
+                    }
+                }
+            }
+        }
+    }
+    UpdateSpritePos()
+    {
+        if(this.inputController)
+        {
+
+        }
+    }
     ShowParticleInfo(partinfos:PartInfo[])
     {
         for(let i =0;i<partinfos.length;i++)
@@ -91,6 +159,8 @@ export default class DlParticleEdit extends Component {
             node.name = name;
             this.node.addChild(node);
         }
+        this.isOnlyUpdateSpritePos = true;
+        this.isOnlyUpdateSpritePos = false;
         this.currentPartInfo = partinfos;
     }
     GetCurrentPartinfo()
@@ -121,6 +191,8 @@ export default class DlParticleEdit extends Component {
             }
         }
         this.nodeJoint.getComponent("DlJoints").UpdateJointInfo(partinfo.partJoints);
+        this.isNeedUpdateDisPlaySprite  = true;
+        this.isOnlyUpdateSpritePos = true;
         DlExportleveljs.instance.UpdatePartInfo(this.currentPartInfo);
     }
     UpdateJointInfo(partjoints:PartJoint[])
@@ -260,6 +332,16 @@ export default class DlParticleEdit extends Component {
             this.currentPartInfo[i].SetValue(this.currentPartInfo[i+1]);
         }
         this.currentPartInfo.pop();
+        for(i=0;i<this.spritesNode.children.length;i++)
+        {
+            let child = this.spritesNode.children[i];
+            if(child.name == name)
+            {
+                child.removeFromParent();
+                child.destroy();
+                break;
+            }
+        }
     }
 
     GetCurrentJointIndex()

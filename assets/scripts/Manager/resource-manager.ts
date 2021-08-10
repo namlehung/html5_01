@@ -21,23 +21,48 @@ export default class ResourcesManager {
     }
 
     isLoadFinished:boolean = false;
+    arrayLoadedSpriteFolder: {[key:string]:boolean} = {};
+    arrayLoadedPrefabFolder: {[key:string]:boolean} = {};
     private arraySprite: {[key:string]:cc.SpriteFrame} = {};
     private arrayPrefab: {[key:string]:cc.Prefab} = {};
+    
 
-    ReleaseSprite(data:any){
+    ReleaseSprite(data:any,arrayloaded:any,foldername:string){
         for(let key in data)
         {
             cc.log("----release Sprite: " + key)
             cc.assetManager.releaseAsset(data[key]);
         }
+        arrayloaded[foldername] = false;
     }
-
+    IsLoadedSpriteFolder(name:string)
+    {
+        if(this.arrayLoadedSpriteFolder[name])
+        {
+           return this.arrayLoadedSpriteFolder[name];
+        }
+        return false;
+    }
+    IsLoadedPrefabFolder(name:string)
+    {
+        if(this.arrayLoadedPrefabFolder[name])
+        {
+           return this.arrayLoadedPrefabFolder[name];
+        }
+        return false;
+    }
     LoadSpritFolder(folderNamePath:string,isReleaseResource: boolean)
     {
         this.isLoadFinished =false;
+        let foldername = folderNamePath.substring(folderNamePath.lastIndexOf("/")+1);
+        if(this.IsLoadedSpriteFolder(foldername))
+        {
+            this.isLoadFinished =true;
+            return;
+        }
         if(isReleaseResource)
         {
-            this.ReleaseSprite(this.arraySprite);
+            this.ReleaseSprite(this.arraySprite,this.arrayLoadedSpriteFolder,foldername);
         }
         cc.resources.loadDir(folderNamePath, (err, assets) =>{
             cc.log('-------------LoadSpritFolder: ' + folderNamePath);
@@ -51,14 +76,18 @@ export default class ResourcesManager {
                 });
             }
             this.isLoadFinished = true;
+            let name = folderNamePath.substring(folderNamePath.lastIndexOf("/")+1);
+            this.arrayLoadedSpriteFolder[name] = true;
         });
     }
 
     LoadPrefabsFolder(folderNamePath:string,isReleaseResource: boolean)
     {
+        this.isLoadFinished =false;
+        let foldername = folderNamePath.substring(folderNamePath.lastIndexOf("/")+1);
         if(isReleaseResource)
         {
-            this.ReleaseSprite(this.arrayPrefab);
+            this.ReleaseSprite(this.arrayPrefab,this.arrayLoadedPrefabFolder,foldername);
         }
         cc.resources.loadDir(folderNamePath,(err,assets)=>{
             //cc.log('-------------loadResDir Prefabs-------------------');
@@ -70,6 +99,8 @@ export default class ResourcesManager {
                     this.arrayPrefab[item.data._name.toLowerCase()] = item;
                    }
                 });
+                let name = folderNamePath.substring(folderNamePath.lastIndexOf("/")+1);
+                this.arrayLoadedPrefabFolder[name] = true;
             }
         });
     }

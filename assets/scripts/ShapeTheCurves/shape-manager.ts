@@ -1,10 +1,11 @@
 
-import { _decorator, Component, Node,Vec2, CCLoader, Label, Vec3, Sprite, Prefab } from 'cc';
+import { _decorator, Component, Node,Vec2, CCLoader, Label, Vec3, Sprite, Prefab, Size } from 'cc';
 import GameManager, { GAME_STATE } from '../Manager/game-manager';
 import { InputController } from '../Controller/input-controller';
 import ResourcesManager from '../Manager/resource-manager';
 import ShapeLevel, {  PartInfo, PartJoint, ShapeLevelInfo } from './shape-level';
 import Particle, {PARTICLE_MOVE_TYPE} from './particle';
+import ShapeDebugInfo from './shape-debug-info';
 
 const { ccclass, property } = _decorator;
 
@@ -144,6 +145,8 @@ export default class ShapeManager extends Component {
 
     textResult: string = 'FAILED';
 
+    GameScreenSize:cc.Size = new Size(480,854);
+
     private static _instance: ShapeManager = null;
     static get instance()
     {
@@ -181,20 +184,23 @@ export default class ShapeManager extends Component {
             case GAME_STATE.STATE_LOADING:
                 if(this.isLevelLoading)
                 {
-                    if(ResourcesManager.instance.isLoadFinished)
+                    if(ResourcesManager.instance.IsLoadedSpriteFolder(this.currentLevelInfo.levelName) && ResourcesManager.instance.IsLoadedPrefabFolder("Effects"))
                     {
                         this.isLevelLoading = false;
                         
                         GameManager.instance.SwitchState(GAME_STATE.STATE_ACTION_PHASE);
-                        let bgsprite = GameManager.instance.GetAPNode().getChildByName('background-level').getComponentInChildren("cc.Sprite");
+                        let nodebgsprite:Node = GameManager.instance.GetAPNode().getChildByName('background-level').getChildByName("bg");
+                        let bgsprite = nodebgsprite.getComponent("cc.Sprite");
                         if(bgsprite)
                         {
                             bgsprite._spriteFrame = ResourcesManager.instance.GetSprites("bg");
+                            //nodebgsprite.setContentSize(this.GameScreenSize);
                         }
                         
                         this.shapeHintNode = cc.instantiate(ResourcesManager.instance.GetPrefabs("particle-hint"));
                         this.shapeNode.addChild(this.shapeHintNode);
                         this.shapeHintNode.setPosition(-9999,-9999,0);
+                        this.ShowDebugLineLimited();
                     }
                 }
                 break;
@@ -294,7 +300,7 @@ export default class ShapeManager extends Component {
     
     UpdateGenerateShap()
     {
-        if(this.isWrongPart || this.currentIndexShape > this.currentLevelInfo.partInfo.length || GameManager.instance.GetTimeInAP() > this.currentLevelInfo.timeLimited)
+        if((this.isWrongPart && !ShapeDebugInfo.instance.IsIgnoreMatchedPart()) || this.currentIndexShape > this.currentLevelInfo.partInfo.length || GameManager.instance.GetTimeInAP() > this.currentLevelInfo.timeLimited)
         {
             GameManager.instance.SwitchState(GAME_STATE.STATE_GAME_RESULT);
             let bg = GameManager.instance.GetResultNode();
@@ -417,6 +423,48 @@ export default class ShapeManager extends Component {
             this.isWrongPart = true;
         }
     }
+    ShowDebugLineLimited()
+    {
+       let node:Node =  GameManager.instance.GetAPNode().getChildByName('background-level').getChildByName("linelimited");
+       if(node)
+       {
+           node.setPosition(0,this.currentLevelInfo.limitedLinePosY);
+           if( ShapeDebugInfo.instance.IsShowLinitedLine() == true)
+            {
+                node.active = true;
+            }
+            else
+            {
+                node.active = false;
+            }
+       }
+    }
+    UpdateDebugInfo(event: any,customdata:string)
+    {
+        let debugnode = GameManager.instance.GetIGMNode().getChildByName("debug");
+        if(customdata == "partline")
+        {
+            if(debugnode)
+            {
+               ShapeDebugInfo.instance.SetShowPartLine(debugnode.getChildByName("TogglepartLine")?.getComponent("cc.Toggle").isChecked);
+            }
+        }
+        else if(customdata == "linelimited")
+        {
+            if(debugnode)
+            {
+               ShapeDebugInfo.instance.SetShowLineLimited(debugnode.getChildByName("Toggleline")?.getComponent("cc.Toggle").isChecked);
+            }
+        }
+        else if(customdata == "ignorematched")
+        {
+            if(debugnode)
+            {
+               ShapeDebugInfo.instance.SetIgnoreMatched(debugnode.getChildByName("Toggleingorematchedpart")?.getComponent("cc.Toggle").isChecked);
+            }
+        }
+    }
+
     IsFirstPart()
     {
         return (this.currentIndexShape==1);
@@ -435,11 +483,19 @@ export default class ShapeManager extends Component {
     }
     PauseGame()
     {
+
+        let debugnode = GameManager.instance.GetIGMNode().getChildByName("debug");
+        if(debugnode)
+        {
+            debugnode.active = ShapeDebugInfo.instance.IsEnable();
+        }
+        
         GameManager.instance.PauseGame();
     }
 
     ResumeGame()
     {
+        this.ShowDebugLineLimited();
         GameManager.instance.ResumeGame();
     }
 }
