@@ -2,7 +2,7 @@
 import { _decorator, Component, Node, Vec2, Vec3, TERRAIN_HEIGHT_BASE, CCLoader, Size } from 'cc';
 import { InputController } from '../../Controller/input-controller';
 import ResourcesManager from '../../Manager/resource-manager';
-import { PartInfo, PartJoint, PartPoint } from '../shape-level';
+import ShapeLevel, { PartInfo, PartJoint, PartPoint, ShapeLevelInfo } from '../shape-level';
 import DlExportleveljs from './dl-exportleveljs';
 import { DlJoints } from './dl-joints';
 const { ccclass, property } = _decorator;
@@ -79,7 +79,7 @@ export default class DlParticleEdit extends Component {
 
     AddParticle(name:string)
     {
-        this.selectedPartName = name;
+        //this.selectedPartName = name;
         let node = cc.instantiate(this.prefabbuttonlevel);
         node.getComponent("ButtonLevel").InitButton(name,"DlParticleEdit");
         node.name = name;
@@ -105,6 +105,7 @@ export default class DlParticleEdit extends Component {
         node2.children[0].setContentSize(spriteSize);
         node2.name = partinfo.spriteName;
         this.spritesNode.addChild(node2);
+        node2.setScale(partinfo.scale,partinfo.scale,partinfo.scale);
         node2.setPosition(partinfo.endPoint.x,partinfo.endPoint.y,0);
     }
 
@@ -136,6 +137,7 @@ export default class DlParticleEdit extends Component {
                         let spriteSize = new cc.Size(sprite._spriteFrame._rect.width,sprite._spriteFrame._rect.height);
                         node.children[0].setContentSize(spriteSize);
                         node.name = partinfo.spriteName;
+                        node.setScale(partinfo.scale,partinfo.scale,partinfo.scale);
                         this.spritesNode.addChild(node);
                         node.setPosition(partinfo.endPoint.x,partinfo.endPoint.y,0);
                     }
@@ -234,7 +236,7 @@ export default class DlParticleEdit extends Component {
             node.name = name;
             this.node.addChild(node);
         }
-        this.isOnlyUpdateSpritePos = true;
+        this.isNeedUpdateDisPlaySprite = true;
         this.isOnlyUpdateSpritePos = false;
         this.currentPartInfo = partinfos;
     }
@@ -335,9 +337,30 @@ export default class DlParticleEdit extends Component {
                 if(i>0)
                 {
                     this.SwapPartInfo(i);
+                    break;
                 }
             }
         }
+        this.isNeedUpdateDisPlaySprite = true;
+        this.isOnlyUpdateSpritePos = false;
+        /*for(i=0;i<this.spritesNode.children.length;i++)
+        {
+            let child = this.spritesNode.children[i];
+            if(child.name == this.selectedPartName)
+            {
+                if(i > 1)
+                {
+                    let temppos = new Vec3(child.position.x,child.position.y,child.position.z);
+                    child.setPosition(new Vec3(this.spritesNode.children[i-1].position.x,this.spritesNode.children[i-1].position.y,this.spritesNode.children[i-1].position.z));
+                    this.spritesNode.children[i-1].setPosition(temppos);
+                    let tempnode = this.spritesNode.children[i-1];
+                    this.spritesNode.children[i-1] = this.spritesNode.children[i];
+                    this.spritesNode.children[i] = tempnode;
+                    break;
+                }
+                
+            }
+        }*/
     }
     MoveCurrentDown()
     {
@@ -366,16 +389,40 @@ export default class DlParticleEdit extends Component {
                 if(i + 1 <this.currentPartInfo.length)
                 {
                     this.SwapPartInfo(i+1);
+                    break;
                 }
             }
         }
+        this.isNeedUpdateDisPlaySprite = true;
+        this.isOnlyUpdateSpritePos = false;
+        /*for(i=0;i<this.spritesNode.children.length;i++)
+        {
+            let child = this.spritesNode.children[i];
+            if(child.name == this.selectedPartName)
+            {
+                if(i + 1 <this.spritesNode.children.length)
+                {
+                    let temppos = new Vec3(child.position.x,child.position.y,child.position.z);
+                    child.setPosition(new Vec3(this.spritesNode.children[i+1].position.x,this.spritesNode.children[i+1].position.y,this.spritesNode.children[i+1].position.z));
+                    this.spritesNode.children[i+1].setPosition(temppos);
+                    let tempnode = this.spritesNode.children[i+1];
+                    this.spritesNode.children[i+1] = this.spritesNode.children[i];
+                    this.spritesNode.children[i] = tempnode;
+                    break;
+                }
+                
+            }
+        }*/
     }
 
     SwapPartInfo(index:number)
     {
-        let parinfo = this.currentPartInfo[index].Clone();
-        this.currentPartInfo[index].SetValue(this.currentPartInfo[index-1]);
-        this.currentPartInfo[index-1].SetValue(parinfo);
+        //let parinfo = this.currentPartInfo[index].Clone();
+        //this.currentPartInfo[index].SetValue(this.currentPartInfo[index-1]);
+        //this.currentPartInfo[index-1].SetValue(parinfo);
+        let parinfo = ShapeLevel.instance.ClonePartInfo(this.currentPartInfo[index]);
+        ShapeLevel.instance.CopyPartInfoValue(this.currentPartInfo[index-1],this.currentPartInfo[index]);
+        ShapeLevel.instance.CopyPartInfoValue(parinfo,this.currentPartInfo[index-1]);
     }
 
     RemoveCurrent()
@@ -404,10 +451,14 @@ export default class DlParticleEdit extends Component {
         }
         for(;i<this.currentPartInfo.length-1;i++)
         {
-            this.currentPartInfo[i].SetValue(this.currentPartInfo[i+1]);
+            //this.currentPartInfo[i].SetValue(this.currentPartInfo[i+1]);
+            ShapeLevel.instance.CopyPartInfoValue(this.currentPartInfo[i+1],this.currentPartInfo[i]);
         }
         this.currentPartInfo.pop();
-        for(i=0;i<this.spritesNode.children.length;i++)
+
+        this.isNeedUpdateDisPlaySprite = true;
+        this.isOnlyUpdateSpritePos = false;
+        /*for(i=0;i<this.spritesNode.children.length;i++)
         {
             let child = this.spritesNode.children[i];
             if(child.name == name)
@@ -416,7 +467,7 @@ export default class DlParticleEdit extends Component {
                 child.destroy();
                 break;
             }
-        }
+        }*/
     }
 
     GetCurrentJointIndex()

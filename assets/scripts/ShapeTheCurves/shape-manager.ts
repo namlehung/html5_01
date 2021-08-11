@@ -62,7 +62,8 @@ export class ShapeJointInfo
     }
     GetCurrentJointPos()
     {
-        return new Vec3(this.arrayJoint[this.currentIndex].x,this.arrayJoint[this.currentIndex].y,0);
+        let pos = new Vec3(this.arrayJoint[this.currentIndex].x,this.arrayJoint[this.currentIndex].y,0);
+        return pos;
     }
     GetCurrentTargetSpriteName()
     {
@@ -96,9 +97,18 @@ export class ShapeJointInfo
     }
     GoNextJoint()
     {
-        for(let i = 0;i<this.arrayStatus.length;i++)
+        let i = this.currentIndex+1;
+        for(;i<this.arrayStatus.length;i++)
         {
-            if(this.currentIndex != i && this.arrayStatus[i]== 1)
+            if(this.arrayStatus[i]== 1)
+            {
+                this.currentIndex = i;
+                return true;
+            }
+        }
+        for(i = 0;i<this.currentIndex;i++)
+        {
+            if(this.arrayStatus[i]== 1)
             {
                 this.currentIndex = i;
                 return true;
@@ -140,6 +150,7 @@ export default class ShapeManager extends Component {
 
     currentIndexShape: number = 0;
     deltaPartPosX: number = 0;
+    deltaPartPosY: number = 0;
     numberMatchedPart:number = 0;
     isWrongPart:boolean = false;
 
@@ -305,7 +316,7 @@ export default class ShapeManager extends Component {
         {
             if(this.isWrongPart && ShapeDebugInfo.instance.IsEnable() && ShapeDebugInfo.instance.IsIgnoreMatchedPart() 
             && this.currentIndexShape <= this.currentLevelInfo.partInfo.length
-            && GameManager.instance.GetTimeInAP() > this.currentLevelInfo.timeLimited)
+            && GameManager.instance.GetTimeInAP() <= this.currentLevelInfo.timeLimited)
             {
                 console.log("debug ignore check matched part");
             }
@@ -353,13 +364,18 @@ export default class ShapeManager extends Component {
                 this.shapeNode.addChild(node);
                 node.setScale(partinfo.scale,partinfo.scale,partinfo.scale);
                 node.setPosition(partinfo.startPoint.x,partinfo.startPoint.y,0);
-                
+
+                spriteSize.width = spriteSize.width*partinfo.scale;
+                spriteSize.height = spriteSize.height*partinfo.scale;
                 partts.InitParticle(partinfo,this.currentLevelInfo.minMoveX,this.currentLevelInfo.maxMoveX,spriteSize);
+
+                this.UpdateShapeJoint();
+
                 this.currentIndexShape++;
                 this.currentParticleNode = node;
                 this.isWrongPart = false;
 
-                this.UpdateShapeJoint();
+                
                 console.log("add shape " + this.currentIndexShape);
             }
             else
@@ -372,7 +388,8 @@ export default class ShapeManager extends Component {
                     {
                         if(this.IsFirstPart())
                         {
-                            this.deltaPartPosX = this.currentParticleNode.position.x - this.currentParticleNode.position.x;
+                            this.deltaPartPosX = this.currentParticleNode.position.x - this.currentLevelInfo.partInfo[0].endPoint.x;
+                            this.deltaPartPosY = this.currentParticleNode.position.y - this.currentLevelInfo.partInfo[0].endPoint.y;
                         }
                         if(ShapeDebugInfo.instance.IsEnable() && ShapeDebugInfo.instance.IsShowPartDebugLine())
                         {
@@ -391,7 +408,7 @@ export default class ShapeManager extends Component {
 
     UpdateShapeJoint()
     {
-        if(this.currentIndexShape <= 1)
+        if(this.currentIndexShape < 1)
         {
             this.shapeHintNode.setPosition(-9999,-9999,0);
         }
@@ -399,14 +416,16 @@ export default class ShapeManager extends Component {
         {
             let partjoints:PartJoint[] = this.currentLevelInfo.partInfo[this.currentIndexShape-1].partJoints;
             this.currentJoint.UpdateStatus(partjoints);
-            this.shapeHintNode.setPosition(this.currentJoint.GetCurrentJointPos());
+            let pos = this.currentJoint.GetCurrentJointPos();
+            this.shapeHintNode.setPosition(pos.x + this.deltaPartPosX,pos.y + this.deltaPartPosY,0);
         }
     }
     SwapShapeHint()
     {
         if(this.currentJoint.GoNextJoint())
         {
-            this.shapeHintNode.setPosition(this.currentJoint.GetCurrentJointPos());
+            let pos = this.currentJoint.GetCurrentJointPos();
+            this.shapeHintNode.setPosition(pos.x + this.deltaPartPosX,pos.y+this.deltaPartPosY,0);
         }
     }
     FinishedWaitParticleDeleted()
@@ -436,6 +455,7 @@ export default class ShapeManager extends Component {
     {
         this.shapeNode.removeAllChildren();
         this.currentParticleNode = null;
+        this.isWrongPart = false;
         this.currentIndexShape = 0;
         this.textResult = 'FAILED';
         GameManager.instance.ResetTimeInGame();
@@ -520,6 +540,10 @@ export default class ShapeManager extends Component {
     GetDeltaPartPosX()
     {
         return this.deltaPartPosX;
+    }
+    GetDeltaPartPosY()
+    {
+        return this.deltaPartPosY;
     }
     GetLimitedLinePosy()
     {

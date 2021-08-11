@@ -75,9 +75,9 @@ export default class Particle extends Component {
              let lineposy = ShapeManager.instance.GetLimitedLinePosy();
              let nearpos = this.GetNearestTarget(0);
 
-            if(nodepos.y <= lineposy - this.spriteHalfSize.height)
+            if(nodepos.y <= lineposy + this.spriteHalfSize.height)
             {
-                nodepos.y = lineposy - this.spriteHalfSize.height;
+                nodepos.y = lineposy + this.spriteHalfSize.height;
                 this.isFinishMoving = true;
                 this.CheckMacthParticle();
             }
@@ -86,9 +86,9 @@ export default class Particle extends Component {
             {
                 let delta = ShapeManager.instance.GetDeltaPartPosX();
                 if((nodepos.x - delta - this.spriteHalfSize.width == nearpos.x ||  nodepos.x - delta + this.spriteHalfSize.width == nearpos.x) &&
-                    nodepos.y + this.spriteHalfSize.height <= this.partInfo.endPoint.y)
+                    nodepos.y <= this.partInfo.endPoint.y)
                 {
-                    nodepos.y = this.partInfo.endPoint.y - this.spriteHalfSize.height;
+                    nodepos.y = this.partInfo.endPoint.y;
                     this.isFinishMoving = true;
                     this.CheckMacthParticle();
                 }

@@ -25,7 +25,7 @@ export class PartInfo
     endPoint:PartPoint;
     partJoints: PartJoint[] = [];
     
-    Clone():PartInfo
+    /*Clone():PartInfo
     {
         let partinfo = new PartInfo();
         partinfo.spriteName = this.spriteName;
@@ -69,7 +69,7 @@ export class PartInfo
             partjoint.id = partinfo.partJoints[i].id;
             this.partJoints.push(partjoint);
         }
-    }
+    }*/
 };
 
 export class ShapeLevelInfo{
@@ -92,9 +92,231 @@ export default class ShapeLevel {
         return ShapeLevel._instance;
     }
     
-    LEVEL1:ShapeLevelInfo = {"levelName":"bambi","timeLimited": 50,"targetMacthedParticle":3,"minMoveX":40,"maxMoveX":50,"limitedLinePosY":-300,
-                        "partInfo": [],
-                    };
+    LEVEL1:ShapeLevelInfo = {
+        "levelName": "bambi",
+        "timeLimited": 50,
+        "targetMacthedParticle": 0,
+        "minMoveX": 40,
+        "maxMoveX": 0,
+        "limitedLinePosY": -210,
+        "partInfo": [{
+            "spriteName": "1",
+            "scale": 1.5,
+            "fallSpeed": 2,
+            "moveSpeed": 10,
+            "startPoint": {
+                "x": 0,
+                "y": 300
+            },
+            "endPoint": {
+                "x": -147,
+                "y": -136
+            },
+            "partJoints": [{
+                "x": -148,
+                "y": -87,
+                "id": "1;5"
+            }, {
+                "x": -126,
+                "y": -74,
+                "id": "1;2"
+            }]
+        }, {
+            "spriteName": "5",
+            "scale": 1.5,
+            "fallSpeed": 2,
+            "moveSpeed": 10,
+            "startPoint": {
+                "x": 0,
+                "y": 300
+            },
+            "endPoint": {
+                "x": -121,
+                "y": -30
+            },
+            "partJoints": [{
+                "x": -93,
+                "y": 26,
+                "id": "5;6"
+            }]
+        }, {
+            "spriteName": "6",
+            "scale": 1.5,
+            "fallSpeed": 2,
+            "moveSpeed": 10,
+            "startPoint": {
+                "x": 0,
+                "y": 300
+            },
+            "endPoint": {
+                "x": -57,
+                "y": 54
+            },
+            "partJoints": [{
+                "x": -32,
+                "y": 81,
+                "id": "6;7"
+            }]
+        }, {
+            "spriteName": "7",
+            "scale": 1.5,
+            "fallSpeed": 2,
+            "moveSpeed": 10,
+            "startPoint": {
+                "x": 0,
+                "y": 300
+            },
+            "endPoint": {
+                "x": -35,
+                "y": 118
+            },
+            "partJoints": [{
+                "x": -4,
+                "y": 141,
+                "id": "7;8"
+            }]
+        }, {
+            "spriteName": "8",
+            "scale": 1.5,
+            "fallSpeed": 2,
+            "moveSpeed": 10,
+            "startPoint": {
+                "x": 0,
+                "y": 300
+            },
+            "endPoint": {
+                "x": 24,
+                "y": 124
+            },
+            "partJoints": [{
+                "x": 45,
+                "y": 83,
+                "id": "8;9"
+            }]
+        }, {
+            "spriteName": "9",
+            "scale": 1.5,
+            "fallSpeed": 2,
+            "moveSpeed": 10,
+            "startPoint": {
+                "x": 0,
+                "y": 300
+            },
+            "endPoint": {
+                "x": 36,
+                "y": 40
+            },
+            "partJoints": [{
+                "x": 33,
+                "y": -4,
+                "id": "9;10"
+            }]
+        }, {
+            "spriteName": "10",
+            "scale": 1.5,
+            "fallSpeed": 2,
+            "moveSpeed": 10,
+            "startPoint": {
+                "x": 0,
+                "y": 300
+            },
+            "endPoint": {
+                "x": 21,
+                "y": -44
+            },
+            "partJoints": [{
+                "x": -4,
+                "y": -43,
+                "id": "10;11"
+            }, {
+                "x": 42,
+                "y": -85,
+                "id": "10;4"
+            }]
+        }, {
+            "spriteName": "2",
+            "scale": 1.5,
+            "fallSpeed": 2,
+            "moveSpeed": 10,
+            "startPoint": {
+                "x": 0,
+                "y": 300
+            },
+            "endPoint": {
+                "x": -96,
+                "y": -138
+            },
+            "partJoints": []
+        }, {
+            "spriteName": "11",
+            "scale": 1.5,
+            "fallSpeed": 2,
+            "moveSpeed": 10,
+            "startPoint": {
+                "x": 0,
+                "y": 300
+            },
+            "endPoint": {
+                "x": -19,
+                "y": -63
+            },
+            "partJoints": [{
+                "x": -48,
+                "y": -41,
+                "id": "11;12"
+            }, {
+                "x": -20,
+                "y": -86,
+                "id": "11;2"
+            }, {
+                "x": 7,
+                "y": -88,
+                "id": "11;2"
+            }]
+        }, {
+            "spriteName": "12",
+            "scale": 1.5,
+            "fallSpeed": 2,
+            "moveSpeed": 10,
+            "startPoint": {
+                "x": 0,
+                "y": 300
+            },
+            "endPoint": {
+                "x": -75.5,
+                "y": -62
+            },
+            "partJoints": []
+        }, {
+            "spriteName": "3",
+            "scale": 1.5,
+            "fallSpeed": 2,
+            "moveSpeed": 10,
+            "startPoint": {
+                "x": 0,
+                "y": 300
+            },
+            "endPoint": {
+                "x": 12,
+                "y": -147
+            },
+            "partJoints": []
+        }, {
+            "spriteName": "4",
+            "scale": 1.5,
+            "fallSpeed": 2,
+            "moveSpeed": 10,
+            "startPoint": {
+                "x": 0,
+                "y": 300
+            },
+            "endPoint": {
+                "x": 58,
+                "y": -139
+            },
+            "partJoints": []
+        }]
+    };
     LEVELDATA:ShapeLevelInfo[] = [this.LEVEL1];
 
     GetLevelInfos(index: number){
@@ -109,6 +331,52 @@ export default class ShapeLevel {
             index = 0;
         }
         return this.LEVELDATA[index];
+    }
+
+    ClonePartInfo(inputPartInfo:PartInfo):PartInfo
+    {
+        let partinfo = new PartInfo();
+        partinfo.spriteName = inputPartInfo.spriteName;
+        partinfo.scale = inputPartInfo.scale;
+        partinfo.fallSpeed = inputPartInfo.fallSpeed;
+        partinfo.moveSpeed = inputPartInfo.moveSpeed;
+        partinfo.startPoint = new PartPoint();
+        partinfo.startPoint.x = inputPartInfo.startPoint.x;
+        partinfo.startPoint.y = inputPartInfo.startPoint.y;
+        partinfo.endPoint = new PartPoint();
+        partinfo.endPoint.x= inputPartInfo.endPoint.x;
+        partinfo.endPoint.y = inputPartInfo.endPoint.y;
+        partinfo.partJoints = [];
+        for(let i = 0;i<inputPartInfo.partJoints.length;i++)
+        {
+            let partjoint = new PartJoint();
+            partjoint.x = inputPartInfo.partJoints[i].x;
+            partjoint.y = inputPartInfo.partJoints[i].y;
+            partjoint.id = inputPartInfo.partJoints[i].id;
+            partinfo.partJoints.push(partjoint);
+        }
+        return partinfo;
+    }
+
+    CopyPartInfoValue(partinfo:PartInfo,outPartInfo:PartInfo)
+    {
+        outPartInfo.spriteName = partinfo.spriteName;
+        outPartInfo.scale = partinfo.scale;
+        outPartInfo.fallSpeed = partinfo.fallSpeed;
+        outPartInfo.moveSpeed = partinfo.moveSpeed;
+        outPartInfo.startPoint.x = partinfo.startPoint.x;
+        outPartInfo.startPoint.y = partinfo.startPoint.y;
+        outPartInfo.endPoint.x = partinfo.endPoint.x;
+        outPartInfo.endPoint.y = partinfo.endPoint.y;
+        outPartInfo.partJoints = [];
+        for(let i = 0;i<partinfo.partJoints.length;i++)
+        {
+            let partjoint = new PartJoint();
+            partjoint.x = partinfo.partJoints[i].x;
+            partjoint.y = partinfo.partJoints[i].y;
+            partjoint.id = partinfo.partJoints[i].id;
+            outPartInfo.partJoints.push(partjoint);
+        }
     }
    
 }
