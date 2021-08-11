@@ -1,9 +1,10 @@
 
-import { _decorator, Component, Node, Vec2, Vec3, TERRAIN_HEIGHT_BASE } from 'cc';
+import { _decorator, Component, Node, Vec2, Vec3, TERRAIN_HEIGHT_BASE, CCLoader, Size } from 'cc';
 import { InputController } from '../../Controller/input-controller';
 import ResourcesManager from '../../Manager/resource-manager';
 import { PartInfo, PartJoint, PartPoint } from '../shape-level';
 import DlExportleveljs from './dl-exportleveljs';
+import { DlJoints } from './dl-joints';
 const { ccclass, property } = _decorator;
 
 @ccclass('DlParticleEdit')
@@ -146,7 +147,81 @@ export default class DlParticleEdit extends Component {
     {
         if(this.inputController)
         {
+            if(this.selectedPartName != "")
+            {
+                let postouchstart = this.inputController.GetPosTouchStart();
 
+                let dljointts:DlJoints = this.nodeJoint.getComponent("DlJoints");
+                let ismovehint:boolean = false;
+                let hintnode = dljointts.GetHintNode();
+                if(hintnode)
+                {
+                    let hintsize = hintnode.children[0].getContentSize();
+                    hintsize.width *= hintnode.children[0].getScale().x;
+                    hintsize.height *= hintnode.children[0].getScale().y;
+                    if(postouchstart.x >= hintnode.position.x - hintsize.width/2
+                        && postouchstart.x <= hintsize.width/2 + hintnode.position.x 
+                        && postouchstart.y >= hintnode.position.y - hintsize.height/2
+                        && postouchstart.y <= hintsize.height/2 + hintnode.position.y )
+                        {
+                            if(this.inputController.IsTouchMove())
+                            {
+                                let delta = this.inputController.GetMoveVector();
+                                let newpos = hintnode.getPosition().add(new Vec3(delta.x,delta.y,0));
+                                console.log("touch select sprite new pos: " + newpos);
+                                this.inputController.SetTouchStartToMove();
+                                hintnode.setPosition(newpos);
+                                dljointts.UpdateCurrentJointPos(newpos);
+                                ismovehint = true;
+                            }
+                        }
+                }
+
+                let child = null;
+                for(let i = 0;i<this.spritesNode.children.length;i++)
+                {
+                    if(this.spritesNode.children[i].name == this.selectedPartName)
+                    {
+                        child = this.spritesNode.children[i];
+                    }
+                }
+                if(child)
+                {
+                    if(ismovehint == false)
+                    {
+                        let childsize:Size = child?.children[0].getContentSize();
+                        childsize.width *= child?.getScale().x;
+                        childsize.height *= child?.getScale().y;
+                        if(postouchstart.x >= child?.position.x - childsize.width/2
+                            && postouchstart.x <= childsize.width/2 + child?.position.x 
+                            && postouchstart.y >= child?.position.y - childsize.height/2
+                            && postouchstart.y <= childsize.height/2 + child?.position.y )
+                            {
+                                if(this.inputController.IsTouchMove())
+                                {
+                                    let delta = this.inputController.GetMoveVector();
+                                    let newpos = child?.getPosition().add(new Vec3(delta.x,delta.y,0));
+                                    console.log("touch select sprite new pos: " + newpos);
+                                    this.inputController.SetTouchStartToMove();
+                                    child?.setPosition(newpos);
+                                    let partinfo = this.GetCurrentPartinfo();
+                                    if(partinfo)
+                                    {
+                                        partinfo.endPoint.x = newpos.x;
+                                        partinfo.endPoint.y = newpos.y;
+                                        this.UpdateCurrentPartinfo(partinfo);
+                                        this.inputPosxNode.getComponent("cc.EditBox").string = "" + partinfo.endPoint.x;
+                                        this.inputPosyNode.getComponent("cc.EditBox").string = "" + partinfo.endPoint.y;
+                                    }
+                                }
+                            }
+                    }
+                }
+            }
+        }
+        else
+        {
+            this.inputController = this.spritesNode.parent?.getChildByName("bg")?.getComponentInChildren("InputController");
         }
     }
     ShowParticleInfo(partinfos:PartInfo[])

@@ -35,7 +35,7 @@ export default class ShapeDebugInfo {
     {
         return this.isEnable;
     }
-    IsShowPartDebugLind():boolean
+    IsShowPartDebugLine():boolean
     {
         return this.isShowPartDebugLine;
     }

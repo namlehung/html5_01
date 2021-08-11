@@ -1,5 +1,5 @@
 
-import { _decorator, Component, Node } from 'cc';
+import { _decorator, Component, Node, Vec3 } from 'cc';
 import { PartJoint } from '../shape-level';
 import DlParticleEdit from './dl-particle-edit';
 const { ccclass, property } = _decorator;
@@ -27,6 +27,9 @@ export class DlJoints extends Component {
     @property(Node)
     inputJointtarget:Node = null;
 
+    @property(Node)
+    hintNode:Node = null;
+
     listJoint:PartJoint[] = [];
     selectedJointName:string = "";
     currentCount:number = 1;
@@ -35,6 +38,7 @@ export class DlJoints extends Component {
         if(this.inputNode && this.selectedJointName=="")
         {
             this.inputNode.active = false;
+            this.hintNode.setPosition(-9999,0,0);
         }
     }
 
@@ -52,10 +56,11 @@ export class DlJoints extends Component {
         joint.id = DlParticleEdit.instance.GetCurrentPartinfo().spriteName + ";";
         this.listJoint.push(joint);
         this.inputJointposx.getComponent("cc.EditBox").string = ""+joint.x;
-        this.inputJointposy.getComponent("cc.EditBox").string = ""+joint.x;
+        this.inputJointposy.getComponent("cc.EditBox").string = ""+joint.y;
         this.inputJointtarget.getComponent("cc.EditBox").string = joint.id;
         DlParticleEdit.instance.UpdateJointInfo(this.listJoint);
         this.inputNode.active = true;
+        this.hintNode.setPosition(joint.x,joint.y,0);
     }
 
     UpdateSelect(name:string)
@@ -77,9 +82,10 @@ export class DlJoints extends Component {
         }
         let joint = this.listJoint[index -1];
         this.inputJointposx.getComponent("cc.EditBox").string = ""+joint.x;
-        this.inputJointposy.getComponent("cc.EditBox").string = ""+joint.x;
+        this.inputJointposy.getComponent("cc.EditBox").string = ""+joint.y;
         this.inputJointtarget.getComponent("cc.EditBox").string = joint.id;
         this.inputNode.active = true;
+        this.hintNode.setPosition(joint.x,joint.y,0);
     }
 
     RemoveCurrent()
@@ -96,6 +102,7 @@ export class DlJoints extends Component {
                 this.inputNode.active = false;
                 child.destroy();
                 index = i-1;
+                this.hintNode.setPosition(-9999,0,0);
                 break;
             }
         }
@@ -113,6 +120,7 @@ export class DlJoints extends Component {
     HideInputJoint()
     {
         this.inputNode.active = false;
+        this.hintNode.setPosition(-9999,0,0);
     }
 
     ShowJointInfo()
@@ -120,6 +128,7 @@ export class DlJoints extends Component {
         this.listJoint = DlParticleEdit.instance.GetCurrentPartinfo().partJoints;
         this.selectedJointName = "";
         this.inputNode.active = false;
+        this.hintNode.setPosition(-9999,0,0);
         this.currentCount = 0;
 
         let l = this.node.children.length-1;
@@ -144,10 +153,14 @@ export class DlJoints extends Component {
     UpdateJointInfo(partjoints:PartJoint[])
     {
        this.listJoint = partjoints;
+       let index = this.GetcurrentJointindex();
+        if(index>=0){
+            this.hintNode.setPosition(this.listJoint[index].x,this.listJoint[index].y,0);
+        }
     }
     GetcurrentJointindex()
     {
-        let index = 0;
+        let index = -1;
         for(let i= 1;i<this.node.children.length;i++)
         {
             let child = this.node.children[i];
@@ -157,6 +170,31 @@ export class DlJoints extends Component {
             }
         }
         return index;
+    }
+    UnselectCurrentJoint()
+    {
+        this.selectedJointName = "";
+        this.inputNode.active = false;
+        this.hintNode.setPosition(-9999,0,0);
+    }
+    GetHintNode():Node
+    {
+        if(this.selectedJointName=="")
+        {
+            return null;
+        }
+        return this.hintNode;
+    }
+    UpdateCurrentJointPos(pos:Vec3)
+    {
+        this.inputJointposx.getComponent("cc.EditBox").string = ""+pos.x;
+        this.inputJointposy.getComponent("cc.EditBox").string = ""+pos.y;
+        let index = this.GetcurrentJointindex();
+        if(index>=0){
+            this.listJoint[index].x = pos.x;
+            this.listJoint[index].y = pos.y;
+        }
+        DlParticleEdit.instance.UpdateJointInfo(this.listJoint);
     }
 }
 

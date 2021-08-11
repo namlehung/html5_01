@@ -11,16 +11,25 @@ export class DestroysEffect extends Component {
     // @property
     // serializableDummy = 0;
 
+    callBackFunction:any = null;
     start () {
         // [3]
         let anim = this.node.getComponent('cc.Animation');
         anim.on('finished', ()=> {
             console.log("---- animation effect destroyed ");
+            if(this.callBackFunction)
+            {
+                this.callBackFunction();
+            }
             this.node.destroy();
         });
 
     }
 
+    AddCallBack(callback:any)
+    {
+        this.callBackFunction = callback;
+    }
     // update (deltaTime: number) {
     //     // [4]
     // }
