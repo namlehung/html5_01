@@ -97,7 +97,7 @@ export default class ShapeLevel {
         "timeLimited": 50,
         "targetMacthedParticle": 0,
         "minMoveX": 40,
-        "maxMoveX": 0,
+        "maxMoveX": 50,
         "limitedLinePosY": -210,
         "partInfo": [{
             "spriteName": "1",

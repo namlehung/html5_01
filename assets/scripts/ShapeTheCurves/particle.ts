@@ -31,7 +31,8 @@ export default class Particle extends Component {
         isFinishMoving: boolean = false;
         enableFastMoveDown:boolean = false;
         spriteHalfSize:cc.Size = new cc.Size(0,0);
-    
+        isPartMoveOverPosY:boolean = false;
+
         start () {
             // [3]
         }
@@ -71,28 +72,47 @@ export default class Particle extends Component {
     
          CheckFinishMove()
          {
-             let nodepos:Vec3 = this.node.position;
-             let lineposy = ShapeManager.instance.GetLimitedLinePosy();
-             let nearpos = this.GetNearestTarget(0);
+            let nodepos:Vec3 = new Vec3 (this.node.position.x,this.node.position.y,this.node.position.z);
+            let lineposy = ShapeManager.instance.GetLimitedLinePosy();
+            let deltax = ShapeManager.instance.GetDeltaPartPosX();
+            
 
-            if(nodepos.y <= lineposy + this.spriteHalfSize.height)
+            if(nodepos.y  <= this.partInfo.endPoint.y && this.isPartMoveOverPosY == false)
             {
-                nodepos.y = lineposy + this.spriteHalfSize.height;
-                this.isFinishMoving = true;
-                this.CheckMacthParticle();
-            }
-    
-            if(ShapeManager.instance.IsFirstPart() == false)
-            {
-                let delta = ShapeManager.instance.GetDeltaPartPosX();
-                if((nodepos.x - delta - this.spriteHalfSize.width == nearpos.x ||  nodepos.x - delta + this.spriteHalfSize.width == nearpos.x) &&
-                    nodepos.y <= this.partInfo.endPoint.y)
+                this.isPartMoveOverPosY = true;
+                if(ShapeManager.instance.IsFirstPart())
                 {
                     nodepos.y = this.partInfo.endPoint.y;
                     this.isFinishMoving = true;
-                    this.CheckMacthParticle();
+                    ShapeManager.instance.CheckMatchedParticle(this.partInfo.spriteName);
+                    this.node.setPosition(nodepos);
+                    return;
+                }
+                let offx = nodepos.x - this.partInfo.endPoint.x;
+                console.log("check finish move : " + offx);
+                if( offx == deltax)
+                {
+                    nodepos.y = this.partInfo.endPoint.y;
+                    this.isFinishMoving = true;
+                    ShapeManager.instance.CheckMatchedParticle(this.partInfo.spriteName);
+                    this.node.setPosition(nodepos);
+                    return;
                 }
             }
+
+            if(nodepos.y <= lineposy)
+            {
+                this.isFinishMoving = true;
+                ShapeManager.instance.CheckMatchedParticle("");
+            }
+    
+            /*let delta = ShapeManager.instance.GetDeltaPartPosX();
+            if((nodepos.x - delta - this.spriteHalfSize.width == nearpos.x ||  nodepos.x - delta + this.spriteHalfSize.width == nearpos.x) &&
+                nodepos.y <= this.partInfo.endPoint.y)
+            {
+                nodepos.y = this.partInfo.endPoint.y;
+                this.isFinishMoving = true;
+            }*/
     
          }
     
@@ -106,28 +126,28 @@ export default class Particle extends Component {
             }
             if(this.currentMoveType == PARTICLE_MOVE_TYPE.NONE)
             {
-                let nearpos = this.GetNearestTarget(9999);
-                let delta = Math.abs(nearpos.x - this.node.position.x);
+                let deltax = ShapeManager.instance.GetDeltaPartPosX();
+                let nearposx = this.partInfo.endPoint.x + deltax;
+                let delta = Math.abs(nearposx - this.node.position.x);
                 
                 if(mtype == PARTICLE_MOVE_TYPE.MOVE_LEFT)
                 {
-                    console.log("move left");
-                    if(this.node.position.x <= nearpos.x  || delta > this.maxMoveX)
+                    if(this.node.position.x <= nearposx  || delta > this.maxMoveX)
                     {
                         delta = this.minMoveX;
                     }
-                    
-                    this.targetMoveX = this.node.position.x - delta - this.spriteHalfSize.width;
+                    console.log("move left: " + delta + " ep " + nearposx + " posx: " + this.node.position.x +" dx " + deltax);
+                    this.targetMoveX = this.node.position.x - delta;// - this.spriteHalfSize.width;
                 }
                 else if(mtype == PARTICLE_MOVE_TYPE.MOVE_RIGHT)
                 {
-                    console.log("move right");
-                    if(this.node.position.x >= nearpos.x  || delta > this.maxMoveX)
+                    
+                    if(this.node.position.x >= nearposx  || delta > this.maxMoveX)
                     {
                         delta = this.minMoveX;
                     }
-                    
-                    this.targetMoveX = this.node.position.x + delta - this.spriteHalfSize.width;
+                    console.log("move right: " + delta + " ep " + nearposx + " posx: " + this.node.position.x +" dx " + deltax);
+                    this.targetMoveX = this.node.position.x + delta ;//- this.spriteHalfSize.width;
                 }
                 this.currentMoveType = mtype;
             }
@@ -140,6 +160,7 @@ export default class Particle extends Component {
     
         InitParticle(partinfo:PartInfo,minmove:number,maxmove:number,spritesize:cc.Size)
         {
+            this.isPartMoveOverPosY = false;
             this.partInfo = partinfo;
             this.isFinishMoving = false;
             this.currentMoveType = PARTICLE_MOVE_TYPE.NONE;
@@ -155,45 +176,11 @@ export default class Particle extends Component {
             return this.isFinishMoving;
         }
     
-        CheckMacthParticle()
+        IsPartMoving():boolean
         {
-            if(ShapeManager.instance.IsFirstPart() == false)
-            {
-               
-                ShapeManager.instance.CheckMatchedParticle(this.partInfo.spriteName);
-            }
-            else
-            {
-
-            }
-            
-        }
-        GetNearestTarget(defaultvalue:number)
-        {
-            let index = 0;
-            let delta = ShapeManager.instance.GetDeltaPartPosX();
-            let arrayPos = ShapeManager.instance.GetReadyJointPos();
-            if(arrayPos.length == 0)
-            {
-                return new Vec2(-9999,ShapeManager.instance.GetLimitedLinePosy());
-            }
-            let x = arrayPos[index].x + delta;
-            let temp = Math.sqrt((this.node.position.x - x)*(this.node.position.x - x) + (this.node.position.y - arrayPos[index].y)*(this.node.position.y - arrayPos[index].y));
-            if(temp == 0)
-                temp = defaultvalue;
-            for(let i = 1;i<arrayPos.length;i++)
-            {
-                x = arrayPos[i].x + delta;
-                let temp2 =  Math.sqrt((this.node.position.x - x)*(this.node.position.x - x) + (this.node.position.y - arrayPos[i].y)*(this.node.position.y - arrayPos[i].y));
-                if(temp2 == 0)
-                    temp2 = defaultvalue;
-                if(temp >  temp2)
-                {
-                    temp = temp2;
-                    index = i;
-                }
-            }
-            return new Vec2(arrayPos[index].x,arrayPos[index].y);
+            if(this.currentMoveType == PARTICLE_MOVE_TYPE.NONE)
+                return false;
+            return true;
         }
     }
     

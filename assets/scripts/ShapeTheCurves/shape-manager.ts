@@ -6,6 +6,7 @@ import ResourcesManager from '../Manager/resource-manager';
 import ShapeLevel, {  PartInfo, PartJoint, ShapeLevelInfo } from './shape-level';
 import Particle, {PARTICLE_MOVE_TYPE} from './particle';
 import ShapeDebugInfo from './shape-debug-info';
+import ShapeSetting, { GAME_CONTROLL_TYPE } from './shape-setting';
 
 const { ccclass, property } = _decorator;
 
@@ -38,7 +39,7 @@ export class ShapeJointInfo
                 k++;
             }
         }
-        this.currentIndex = 0;
+        this.currentIndex = -1;
     }
     UpdateStatus(partjoints:PartJoint[])
     {
@@ -65,14 +66,22 @@ export class ShapeJointInfo
         let pos = new Vec3(this.arrayJoint[this.currentIndex].x,this.arrayJoint[this.currentIndex].y,0);
         return pos;
     }
-    GetCurrentTargetSpriteName()
+    CheckMatchedTarget(spritename:string):boolean
     {
-        let id = this.arrayJoint[this.currentIndex].id.indexOf(";");
-        if(id>0)
+        let index = this.arrayJoint[this.currentIndex].id.indexOf(";");
+        for(let i=0;i<this.arrayStatus.length;i++)
         {
-            return this.arrayJoint[this.currentIndex].id.substring(id);
+            if(this.arrayStatus[i]== 1)
+            {
+                let matchedname = this.arrayJoint[this.currentIndex].id.substring(index+1);
+                if(matchedname == spritename)
+                {
+                    this.arrayStatus[i] = 2;
+                    return true;
+                }
+            }
         }
-        return "";
+        return false;
     }
     GetReadyJoint()
     {
@@ -141,7 +150,7 @@ export default class ShapeManager extends Component {
     timeLevelLabel: Label = null;
 
     inputController:InputController = null;
-    minMove: Vec2 = new Vec2(120,120);
+    minDragToMove: Vec2 = new Vec2(120,120);
 
     shapeNode:Node = null;
     currentParticleNode: Node = null;
@@ -159,6 +168,7 @@ export default class ShapeManager extends Component {
     isWaitingParticleDeleted:boolean = false;
     GameScreenSize:cc.Size = new Size(480,854);
 
+    moveParticleStack:PARTICLE_MOVE_TYPE[] = [];
     private static _instance: ShapeManager = null;
     static get instance()
     {
@@ -175,6 +185,8 @@ export default class ShapeManager extends Component {
             this.timeLevelLabel = this.timePlayNode.getComponent("cc.Label");
         }
         this.inputController = this.node.parent.getComponent("InputController");
+        this.inputController.SetTouchSize(new Size(480,700));
+        this.inputController.SetDeltaTimeTouch([0.5,0.7,0.9,1.0,1.2,1.4]);
         if(this.currentLevelindex >= ShapeLevel.instance.LEVELDATA.length)
             this.currentLevelindex = 0;
         this.shapeNode = GameManager.instance.GetAPNode().getChildByName("shape");
@@ -225,6 +237,7 @@ export default class ShapeManager extends Component {
                    this.timeLevelRemaining = this.currentLevelInfo.timeLimited -  GameManager.instance.GetTimeInAP();
                    this.UpdateTouch();
                    this.UpdateGenerateShap();
+                   this.UpdateMoveParticle();
                 }
                 break;
             case GAME_STATE.STATE_GAME_RESULT:
@@ -270,46 +283,89 @@ export default class ShapeManager extends Component {
 
      UpdateTouch()
      {
-        let deltamove = this.inputController.GetMoveVector();
-        if(Math.abs(deltamove.x) > this.minMove.x || Math.abs(deltamove.y) > this.minMove.y)
+        let movetype = PARTICLE_MOVE_TYPE.NONE;
+        if(ShapeSetting.instance.GetGameControllType() == GAME_CONTROLL_TYPE.DRAG)
         {
-           // console.log("deltamove: " + deltamove);
-           if(Math.abs(deltamove.x) > Math.abs(deltamove.y))
-           {
-                if( deltamove.x > 0 )
+            let deltamove = this.inputController.GetMoveVector();
+            if(Math.abs(deltamove.x) > this.minDragToMove.x || Math.abs(deltamove.y) > this.minDragToMove.y)
+            {
+            // console.log("deltamove: " + deltamove);
+                if(Math.abs(deltamove.x) > Math.abs(deltamove.y))
                 {
-                    //console.log("move right");
-                    this.MoveParticle(PARTICLE_MOVE_TYPE.MOVE_RIGHT);
+                    if( deltamove.x > 0 )
+                    {
+                        //console.log("move right");
+                        movetype = PARTICLE_MOVE_TYPE.MOVE_RIGHT;
+                    }
+                    else
+                    {
+                        //console.log("move left");
+                        movetype = PARTICLE_MOVE_TYPE.MOVE_LEFT;
+                    }
                 }
                 else
                 {
-                    //console.log("move left");
-                    this.MoveParticle(PARTICLE_MOVE_TYPE.MOVE_LEFT);
+                    if( deltamove.y < 0 )
+                    {
+                        //console.log("move down");
+                        movetype = PARTICLE_MOVE_TYPE.MOVE_DOWN;
+                    }
+                
                 }
-           }
-           else
-           {
-                if( deltamove.y < 0 )
-                {
-                    //console.log("move down");
-                    this.MoveParticle(PARTICLE_MOVE_TYPE.MOVE_DOWN);
-                }
-            
-           }
-           this.inputController.SetTouchStartToMove();
-            
+                this.inputController.SetTouchStartToMove();
+                
+            }
         }
+        else if(ShapeSetting.instance.GetGameControllType() == GAME_CONTROLL_TYPE.TAP)
+        {
+            if(this.inputController.IsTouchOnDeltaTime())
+            {
+                let pos = this.inputController.GetPosTouchStart();
+                if(pos.y > -100)
+                {
+                    if(pos.x > 0)
+                    {
+                        movetype = PARTICLE_MOVE_TYPE.MOVE_RIGHT;
+                    }
+                    else
+                    {
+                        movetype = PARTICLE_MOVE_TYPE.MOVE_LEFT;
+                    }
+                }
+                else
+                {
+                    movetype = PARTICLE_MOVE_TYPE.MOVE_DOWN;
+                }
+            }
+        }
+        this.MoveParticle(movetype);
     }
 
     MoveParticle(mtype:PARTICLE_MOVE_TYPE)
     {
+        if(mtype == PARTICLE_MOVE_TYPE.NONE)
+        {
+            return;
+        }
+        this.moveParticleStack.push(mtype);
+    }
+    UpdateMoveParticle()
+    {
         if(this.currentParticleNode)
         {
-            let partts:Particle = this.currentParticleNode.getComponent("Particle");
-            partts.MoveParticle(mtype);
+            if(this.moveParticleStack.length > 0)
+            {
+                let partts:Particle = this.currentParticleNode.getComponent("Particle");
+                if(partts.IsPartMoving() == false)
+                {
+                    console.log("move particle");
+                    let mtype = this.moveParticleStack.shift();
+                    partts.MoveParticle(mtype);
+                }
+                 
+            }
         }
     }
-    
     UpdateGenerateShap()
     {
         if((this.isWrongPart) || this.currentIndexShape > this.currentLevelInfo.partInfo.length || GameManager.instance.GetTimeInAP() > this.currentLevelInfo.timeLimited)
@@ -318,7 +374,7 @@ export default class ShapeManager extends Component {
             && this.currentIndexShape <= this.currentLevelInfo.partInfo.length
             && GameManager.instance.GetTimeInAP() <= this.currentLevelInfo.timeLimited)
             {
-                console.log("debug ignore check matched part");
+                //console.log("debug ignore check matched part");
             }
             else
             {
@@ -331,6 +387,7 @@ export default class ShapeManager extends Component {
                 {
                     this.textResult = 'Congratulation!';
                 }
+                this.moveParticleStack=[];
                 return;
             }
         }
@@ -400,6 +457,7 @@ export default class ShapeManager extends Component {
                             }
                         }
                         this.currentParticleNode = null;
+                        this.moveParticleStack = [];
                     }
                 }
             }
@@ -416,8 +474,9 @@ export default class ShapeManager extends Component {
         {
             let partjoints:PartJoint[] = this.currentLevelInfo.partInfo[this.currentIndexShape-1].partJoints;
             this.currentJoint.UpdateStatus(partjoints);
-            let pos = this.currentJoint.GetCurrentJointPos();
-            this.shapeHintNode.setPosition(pos.x + this.deltaPartPosX,pos.y + this.deltaPartPosY,0);
+            this.SwapShapeHint();
+            //let pos = this.currentJoint.GetCurrentJointPos();
+            //this.shapeHintNode.setPosition(pos.x + this.deltaPartPosX,pos.y + this.deltaPartPosY,0);
         }
     }
     SwapShapeHint()
@@ -468,18 +527,21 @@ export default class ShapeManager extends Component {
         this.currentJoint.ResetStatus();
     }
 
-    CheckMatchedParticle(spriteName:string)
+    CheckMatchedParticle(spriteName:string):boolean
     {
-        if(this.currentJoint.GetCurrentTargetSpriteName() == spriteName)
+        if(this.IsFirstPart() || this.currentJoint.CheckMatchedTarget(spriteName))
         {
             console.log('this shape is matched');
             this.numberMatchedPart ++;
+            return true;
         }
-        else
+        //else
         {
             this.isWrongPart = true;
+            return false;
         }
     }
+
     UpdateDebugDisplay()
     {
        let node:Node =  GameManager.instance.GetAPNode().getChildByName('background-level').getChildByName("linelimited");
@@ -532,7 +594,21 @@ export default class ShapeManager extends Component {
             }
         }
     }
-
+    OnSettingToggleTouch(event:any)
+    {
+        if(event.node.name == "drag")
+        {
+            console.log("setting drag to move");
+            ShapeSetting.instance.SetGameControllType(GAME_CONTROLL_TYPE.DRAG);
+            ShapeSetting.instance.SaveSetting();
+        }
+        else  if(event.node.name == "tap")
+        {
+            console.log("setting tap to move");
+            ShapeSetting.instance.SetGameControllType(GAME_CONTROLL_TYPE.TAP);
+            ShapeSetting.instance.SaveSetting();
+        }
+    }
     IsFirstPart()
     {
         return (this.currentIndexShape==1);
@@ -555,13 +631,18 @@ export default class ShapeManager extends Component {
     }
     PauseGame()
     {
-
-        let debugnode = GameManager.instance.GetIGMNode().getChildByName("debug");
+        let nodeIGM = GameManager.instance.GetIGMNode();
+        let debugnode = nodeIGM.getChildByName("debug");
         if(debugnode)
         {
             debugnode.active = ShapeDebugInfo.instance.IsEnable();
         }
-        
+        let togglenode:Node = nodeIGM.getChildByName("tapcontroll").getChildByName("controllgroup");
+        if(ShapeSetting.instance.GetGameControllType()==GAME_CONTROLL_TYPE.TAP)
+        {
+            togglenode.getChildByName("drag").getComponent("cc.Toggle").isChecked = false;
+            togglenode.getChildByName("tap").getComponent("cc.Toggle").isChecked = true;
+        }
         GameManager.instance.PauseGame();
     }
 

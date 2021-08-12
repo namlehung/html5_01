@@ -22,10 +22,10 @@ export default class ShapeDebugInfo {
         return ShapeDebugInfo._instance;
     }
 
-    private isEnable:boolean = true;
+    private isEnable:boolean = !true;
     private isShowLimitLine:boolean = true;
     private isShowPartDebugLine:boolean = true;
-    private isIgnoreMatchedPart:boolean = true;
+    private isIgnoreMatchedPart:boolean = false;
 
     IsShowLinitedLine():boolean
     {

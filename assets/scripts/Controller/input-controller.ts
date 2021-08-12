@@ -31,6 +31,9 @@ export class InputController extends Component {
     timePreTouchStart: number = 0;
     timeCurrentTouchStart: number = 0;
     
+    arrayDeltaTimeTouch:number[] = [];
+    indextDeltaTimeTouch:number  = -1;
+    
     start () {
         // [3]
         let rootnode = cc.find('Canvas');
@@ -82,6 +85,7 @@ export class InputController extends Component {
         }
         this.posTouchEnd = pos;
         //console.log("-----------touch end: " + this.posTouchEnd );
+        this.indextDeltaTimeTouch = -1;
     }
     onTouchMove(event: cc.Event.EventTouch){
         let pos:Vec2 = this.GetRealPosTouch(event.getLocation());
@@ -99,6 +103,10 @@ export class InputController extends Component {
         }
     }
 
+    IsTouchStart():boolean
+    {
+        return this.isTouchStart;
+    }
     IsTouchEnd():boolean
     {
         return this.isTouchEnd;
@@ -174,6 +182,34 @@ export class InputController extends Component {
         //console.log("posstart: " + this.posTouchStart)
     }
     SetNodePosition(pos:Vec3){
+    }
+    SetDeltaTimeTouch(atime:number[])
+    {
+        this.arrayDeltaTimeTouch = atime;
+    }
+    IsTouchOnDeltaTime()
+    {
+        if(this.isTouchStart == false)
+            return false;
+        if(this.indextDeltaTimeTouch<0)
+        {
+            this.indextDeltaTimeTouch=0;
+            console.log("input first touch");
+            return true;
+        }
+        /*if(this.indextDeltaTimeTouch >= this.arrayDeltaTimeTouch.length)
+        {
+            console.log("input repeat touch");
+            return true;
+        }*/
+        let deltatime = GameManager.instance.GetCurrentTime() -  this.timeCurrentTouchStart;
+        if(deltatime>this.arrayDeltaTimeTouch[this.indextDeltaTimeTouch])
+        {
+            console.log("input touch : " + this.indextDeltaTimeTouch + " deltatime: " + deltatime);
+            this.indextDeltaTimeTouch++;
+            return true;
+        }
+        return false;
     }
 }
 /**
